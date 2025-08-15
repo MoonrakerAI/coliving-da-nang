@@ -1,0 +1,351 @@
+import { db } from '../index'
+import { 
+  Expense, 
+  CreateExpenseInput, 
+  UpdateExpenseInput,
+  ExpenseFilters,
+  ExpenseSchema,
+  CreateExpenseSchema,
+  UpdateExpenseSchema,
+  ExpenseFiltersSchema
+} from '../models/expense'
+import { v4 as uuidv4 } from 'uuid'
+
+// Generate Redis keys for expense data
+const getExpenseKey = (id: string) => `expense:${id}`
+const getPropertyExpensesKey = (propertyId: string) => `property:${propertyId}:expenses`
+const getUserExpensesKey = (userId: string) => `user:${userId}:expenses`
+const getAllExpensesKey = () => 'expenses:all'
+const getExpensesByCategoryKey = (category: string) => `expenses:category:${category}`
+const getReimbursementExpensesKey = () => 'expenses:reimbursement:pending'
+
+// Create a new expense
+export async function createExpense(input: CreateExpenseInput): Promise<Expense> {
+  try {
+    // Validate input
+    const validatedInput = CreateExpenseSchema.parse(input)
+    
+    // Generate ID and timestamps
+    const id = uuidv4()
+    const now = new Date()
+    
+    const expense: Expense = {
+      ...validatedInput,
+      id,
+      createdAt: now,
+      updatedAt: now
+    }
+
+    // Validate complete expense object
+    const validatedExpense = ExpenseSchema.parse(expense)
+
+    // Store in Redis
+    const expenseKey = getExpenseKey(id)
+    const propertyExpensesKey = getPropertyExpensesKey(expense.propertyId)
+    const userExpensesKey = getUserExpensesKey(expense.userId)
+    const allExpensesKey = getAllExpensesKey()
+    const categoryKey = getExpensesByCategoryKey(expense.category)
+
+    // Use pipeline for atomic operations
+    const pipeline = db.pipeline()
+    
+    // Store expense data as hash
+    pipeline.hset(expenseKey, {
+      ...validatedExpense,
+      createdAt: validatedExpense.createdAt.toISOString(),
+      updatedAt: validatedExpense.updatedAt.toISOString(),
+      expenseDate: validatedExpense.expenseDate.toISOString(),
+      reimbursedDate: validatedExpense.reimbursedDate?.toISOString() || '',
+      receiptPhotos: JSON.stringify(validatedExpense.receiptPhotos),
+      location: validatedExpense.location ? JSON.stringify(validatedExpense.location) : ''
+    })
+    
+    // Add to various indexes
+    pipeline.sadd(propertyExpensesKey, id)
+    pipeline.sadd(userExpensesKey, id)
+    pipeline.sadd(allExpensesKey, id)
+    pipeline.sadd(categoryKey, id)
+    
+    // Add to reimbursement queue if needed
+    if (expense.needsReimbursement && !expense.isReimbursed) {
+      pipeline.sadd(getReimbursementExpensesKey(), id)
+    }
+    
+    await pipeline.exec()
+
+    return validatedExpense
+  } catch (error) {
+    console.error('Error creating expense:', error)
+    throw error
+  }
+}
+
+// Get expense by ID
+export async function getExpense(id: string): Promise<Expense | null> {
+  try {
+    const expenseKey = getExpenseKey(id)
+    const data = await db.hgetall(expenseKey)
+    
+    if (!data || Object.keys(data).length === 0) {
+      return null
+    }
+
+    // Check for soft delete
+    if (data.deletedAt) {
+      return null
+    }
+
+    // Parse stored data back to proper types
+    const expense = {
+      ...data,
+      amountCents: parseInt(data.amountCents),
+      needsReimbursement: data.needsReimbursement === 'true',
+      isReimbursed: data.isReimbursed === 'true',
+      createdAt: new Date(data.createdAt),
+      updatedAt: new Date(data.updatedAt),
+      expenseDate: new Date(data.expenseDate),
+      reimbursedDate: data.reimbursedDate ? new Date(data.reimbursedDate) : undefined,
+      receiptPhotos: data.receiptPhotos ? JSON.parse(data.receiptPhotos) : [],
+      location: data.location ? JSON.parse(data.location) : undefined
+    }
+
+    return ExpenseSchema.parse(expense)
+  } catch (error) {
+    console.error('Error fetching expense:', error)
+    return null
+  }
+}
+
+// Update expense
+export async function updateExpense(input: UpdateExpenseInput): Promise<Expense | null> {
+  try {
+    const validatedInput = UpdateExpenseSchema.parse(input)
+    const { id, ...updates } = validatedInput
+
+    // Get existing expense
+    const existingExpense = await getExpense(id)
+    if (!existingExpense) {
+      throw new Error('Expense not found')
+    }
+
+    // Merge updates with existing data
+    const updatedExpense: Expense = {
+      ...existingExpense,
+      ...updates,
+      updatedAt: new Date()
+    }
+
+    // Validate updated expense
+    const validatedExpense = ExpenseSchema.parse(updatedExpense)
+
+    // Update in Redis
+    const expenseKey = getExpenseKey(id)
+    
+    // Handle category changes
+    if (updates.category && updates.category !== existingExpense.category) {
+      const oldCategoryKey = getExpensesByCategoryKey(existingExpense.category)
+      const newCategoryKey = getExpensesByCategoryKey(updates.category)
+      
+      const pipeline = db.pipeline()
+      pipeline.srem(oldCategoryKey, id)
+      pipeline.sadd(newCategoryKey, id)
+      await pipeline.exec()
+    }
+
+    // Handle reimbursement status changes
+    const reimbursementKey = getReimbursementExpensesKey()
+    if (updates.needsReimbursement !== undefined || updates.isReimbursed !== undefined) {
+      const shouldBeInReimbursementQueue = validatedExpense.needsReimbursement && !validatedExpense.isReimbursed
+      const wasInReimbursementQueue = existingExpense.needsReimbursement && !existingExpense.isReimbursed
+      
+      if (shouldBeInReimbursementQueue && !wasInReimbursementQueue) {
+        await db.sadd(reimbursementKey, id)
+      } else if (!shouldBeInReimbursementQueue && wasInReimbursementQueue) {
+        await db.srem(reimbursementKey, id)
+      }
+    }
+
+    await db.hset(expenseKey, {
+      ...validatedExpense,
+      createdAt: validatedExpense.createdAt.toISOString(),
+      updatedAt: validatedExpense.updatedAt.toISOString(),
+      expenseDate: validatedExpense.expenseDate.toISOString(),
+      reimbursedDate: validatedExpense.reimbursedDate?.toISOString() || '',
+      receiptPhotos: JSON.stringify(validatedExpense.receiptPhotos),
+      location: validatedExpense.location ? JSON.stringify(validatedExpense.location) : ''
+    })
+
+    return validatedExpense
+  } catch (error) {
+    console.error('Error updating expense:', error)
+    throw error
+  }
+}
+
+// Soft delete expense
+export async function deleteExpense(id: string): Promise<boolean> {
+  try {
+    const existingExpense = await getExpense(id)
+    if (!existingExpense) {
+      return false
+    }
+
+    // Soft delete by setting deletedAt
+    const expenseKey = getExpenseKey(id)
+    await db.hset(expenseKey, {
+      deletedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    })
+
+    return true
+  } catch (error) {
+    console.error('Error deleting expense:', error)
+    return false
+  }
+}
+
+// Get expenses with filters
+export async function getExpenses(filters?: ExpenseFilters): Promise<Expense[]> {
+  try {
+    let expenseIds: string[] = []
+
+    if (filters) {
+      const validatedFilters = ExpenseFiltersSchema.parse(filters)
+      
+      // Start with the most specific filter
+      if (validatedFilters.propertyId) {
+        const propertyExpensesKey = getPropertyExpensesKey(validatedFilters.propertyId)
+        expenseIds = await db.smembers(propertyExpensesKey)
+      } else if (validatedFilters.userId) {
+        const userExpensesKey = getUserExpensesKey(validatedFilters.userId)
+        expenseIds = await db.smembers(userExpensesKey)
+      } else if (validatedFilters.category) {
+        const categoryKey = getExpensesByCategoryKey(validatedFilters.category)
+        expenseIds = await db.smembers(categoryKey)
+      } else {
+        const allExpensesKey = getAllExpensesKey()
+        expenseIds = await db.smembers(allExpensesKey)
+      }
+    } else {
+      const allExpensesKey = getAllExpensesKey()
+      expenseIds = await db.smembers(allExpensesKey)
+    }
+    
+    if (!expenseIds || expenseIds.length === 0) {
+      return []
+    }
+
+    // Get all expenses in parallel
+    const expenses = await Promise.all(
+      expenseIds.map(id => getExpense(id))
+    )
+
+    // Filter out null values and apply additional filters
+    let filteredExpenses = expenses.filter((expense): expense is Expense => expense !== null)
+
+    if (filters) {
+      const validatedFilters = ExpenseFiltersSchema.parse(filters)
+      
+      // Apply additional filters that couldn't be done at the Redis level
+      if (validatedFilters.needsReimbursement !== undefined) {
+        filteredExpenses = filteredExpenses.filter(e => e.needsReimbursement === validatedFilters.needsReimbursement)
+      }
+      
+      if (validatedFilters.isReimbursed !== undefined) {
+        filteredExpenses = filteredExpenses.filter(e => e.isReimbursed === validatedFilters.isReimbursed)
+      }
+      
+      if (validatedFilters.expenseDateFrom) {
+        filteredExpenses = filteredExpenses.filter(e => e.expenseDate >= validatedFilters.expenseDateFrom!)
+      }
+      
+      if (validatedFilters.expenseDateTo) {
+        filteredExpenses = filteredExpenses.filter(e => e.expenseDate <= validatedFilters.expenseDateTo!)
+      }
+      
+      if (validatedFilters.amountMin !== undefined) {
+        filteredExpenses = filteredExpenses.filter(e => e.amountCents >= validatedFilters.amountMin!)
+      }
+      
+      if (validatedFilters.amountMax !== undefined) {
+        filteredExpenses = filteredExpenses.filter(e => e.amountCents <= validatedFilters.amountMax!)
+      }
+    }
+
+    // Sort by expense date (most recent first)
+    return filteredExpenses.sort((a, b) => b.expenseDate.getTime() - a.expenseDate.getTime())
+  } catch (error) {
+    console.error('Error fetching expenses:', error)
+    return []
+  }
+}
+
+// Get expenses needing reimbursement
+export async function getReimbursementExpenses(propertyId?: string): Promise<Expense[]> {
+  try {
+    const reimbursementKey = getReimbursementExpensesKey()
+    const expenseIds = await db.smembers(reimbursementKey)
+    
+    if (!expenseIds || expenseIds.length === 0) {
+      return []
+    }
+
+    // Get all expenses in parallel
+    const expenses = await Promise.all(
+      expenseIds.map(id => getExpense(id))
+    )
+
+    // Filter out null values
+    let filteredExpenses = expenses.filter((expense): expense is Expense => expense !== null)
+
+    // Filter by property if specified
+    if (propertyId) {
+      filteredExpenses = filteredExpenses.filter(e => e.propertyId === propertyId)
+    }
+
+    return filteredExpenses.sort((a, b) => b.expenseDate.getTime() - a.expenseDate.getTime())
+  } catch (error) {
+    console.error('Error fetching reimbursement expenses:', error)
+    return []
+  }
+}
+
+// Mark expense as reimbursed
+export async function markExpenseReimbursed(id: string, reimbursedDate?: Date): Promise<Expense | null> {
+  try {
+    return await updateExpense({
+      id,
+      isReimbursed: true,
+      reimbursedDate: reimbursedDate || new Date()
+    })
+  } catch (error) {
+    console.error('Error marking expense as reimbursed:', error)
+    throw error
+  }
+}
+
+// Get expense totals by category for a property
+export async function getExpenseTotalsByCategory(propertyId: string, dateFrom?: Date, dateTo?: Date): Promise<Record<string, number>> {
+  try {
+    const filters: ExpenseFilters = { propertyId }
+    
+    if (dateFrom) filters.expenseDateFrom = dateFrom
+    if (dateTo) filters.expenseDateTo = dateTo
+    
+    const expenses = await getExpenses(filters)
+    
+    const totals: Record<string, number> = {}
+    
+    expenses.forEach(expense => {
+      if (!totals[expense.category]) {
+        totals[expense.category] = 0
+      }
+      totals[expense.category] += expense.amountCents
+    })
+    
+    return totals
+  } catch (error) {
+    console.error('Error calculating expense totals by category:', error)
+    return {}
+  }
+}
