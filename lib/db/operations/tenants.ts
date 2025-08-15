@@ -221,3 +221,8 @@ export async function getTenantByEmail(email: string): Promise<Tenant | null> {
     return null
   }
 }
+
+// Get tenant by ID (alias for compatibility)
+export async function getTenantById(id: string): Promise<Tenant | null> {
+  return getTenant(id)
+}

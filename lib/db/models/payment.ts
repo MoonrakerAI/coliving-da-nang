@@ -55,10 +55,15 @@ export const CreatePaymentSchema = PaymentSchema.omit({
 
 export type CreatePaymentInput = z.infer<typeof CreatePaymentSchema>
 
-// Update payment input schema (all fields optional except id)
-export const UpdatePaymentSchema = PaymentSchema.partial().required({ id: true })
+// Update payment input schema (all fields optional, excludes id since it's passed separately)
+export const UpdatePaymentSchema = PaymentSchema.omit({
+  id: true,
+  createdAt: true,
+  deletedAt: true
+}).partial()
 
-export type UpdatePaymentInput = z.infer<typeof UpdatePaymentSchema>
+export type UpdatePayment = z.infer<typeof UpdatePaymentSchema>
+export type CreatePayment = z.infer<typeof CreatePaymentSchema>
 
 // Payment query filters
 export const PaymentFiltersSchema = z.object({

@@ -35,12 +35,12 @@ describe('Authentication System', () => {
         password: 'TestPassword123!',
         role: UserRole.COMMUNITY_MANAGER,
         status: UserStatus.ACTIVE,
-        propertyIds: ['prop-1'],
+        propertyIds: ['550e8400-e29b-41d4-a716-446655440001'],
         isActive: true,
         emailVerified: true
       }
 
-      const user = await createUser(userData, 'admin-id', '127.0.0.1', 'test-agent')
+      const user = await createUser(userData, '550e8400-e29b-41d4-a716-446655440000', '127.0.0.1', 'test-agent')
       
       expect(user.id).toBeDefined()
       expect(user.email).toBe(userData.email)
@@ -80,7 +80,7 @@ describe('Authentication System', () => {
         password: 'ValidPassword123!',
         role: UserRole.COMMUNITY_MANAGER,
         status: UserStatus.ACTIVE,
-        propertyIds: ['prop-1'],
+        propertyIds: ['550e8400-e29b-41d4-a716-446655440001'],
         isActive: true,
         emailVerified: true
       }
@@ -222,17 +222,17 @@ describe('Authentication System', () => {
         name: 'Invited User',
         role: UserRole.COMMUNITY_MANAGER,
         status: UserStatus.PENDING,
-        propertyIds: ['prop-1'],
+        propertyIds: ['550e8400-e29b-41d4-a716-446655440001'],
         isActive: true,
         emailVerified: false
       }
 
-      const invitedUser = await createUserInvitation(invitationData, 'admin-id')
+      const invitedUser = await createUserInvitation(invitationData, '550e8400-e29b-41d4-a716-446655440000')
       
       expect(invitedUser.email).toBe(invitationData.email)
       expect(invitedUser.status).toBe(UserStatus.PENDING)
       expect(invitedUser.emailVerificationToken).toBeDefined()
-      expect(invitedUser.invitedBy).toBe('admin-id')
+      expect(invitedUser.invitedBy).toBe('550e8400-e29b-41d4-a716-446655440000')
     })
 
     it('should activate user invitation', async () => {
@@ -246,7 +246,7 @@ describe('Authentication System', () => {
         emailVerified: false
       }
 
-      const invitedUser = await createUserInvitation(invitationData, 'admin-id')
+      const invitedUser = await createUserInvitation(invitationData, '550e8400-e29b-41d4-a716-446655440000')
       const newPassword = 'ActivatedPassword123!'
       
       const activatedUser = await activateUserInvitation(

@@ -283,3 +283,8 @@ export async function activateProperty(id: string): Promise<Property | null> {
     throw error
   }
 }
+
+// Get property by ID (alias for compatibility)
+export async function getPropertyById(id: string): Promise<Property | null> {
+  return getProperty(id)
+}

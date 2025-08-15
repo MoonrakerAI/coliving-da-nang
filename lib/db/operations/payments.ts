@@ -290,3 +290,39 @@ export async function markPaymentPaid(id: string, paidDate?: Date): Promise<Paym
     throw error
   }
 }
+
+// Get payments by status (used by reminder scheduler)
+export async function getPaymentsByStatus(statuses: string[]): Promise<Payment[]> {
+  try {
+    const allPaymentIds = new Set<string>()
+    
+    // Get payment IDs for each status
+    for (const status of statuses) {
+      const statusKey = getPaymentsByStatusKey(status)
+      const paymentIds = await db.smembers(statusKey)
+      paymentIds.forEach(id => allPaymentIds.add(id))
+    }
+    
+    if (allPaymentIds.size === 0) {
+      return []
+    }
+    
+    // Get all payments in parallel
+    const payments = await Promise.all(
+      Array.from(allPaymentIds).map(id => getPayment(id))
+    )
+    
+    // Filter out null values and sort by due date
+    return payments
+      .filter((payment): payment is Payment => payment !== null)
+      .sort((a, b) => a.dueDate.getTime() - b.dueDate.getTime())
+  } catch (error) {
+    console.error('Error fetching payments by status:', error)
+    return []
+  }
+}
+
+// Get payment by ID (alias for compatibility)
+export async function getPaymentById(id: string): Promise<Payment | null> {
+  return getPayment(id)
+}

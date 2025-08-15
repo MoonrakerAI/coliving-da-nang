@@ -2,6 +2,7 @@ import { NextAuthOptions } from 'next-auth'
 import { JWT } from 'next-auth/jwt'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import { authenticateUser, seedDefaultUsers } from './db/operations/user'
+import { seedSamplePayments } from './db/operations/payment'
 import { LoginSchema } from './db/models/user'
 import { UserRole as DBUserRole } from './db/models/user'
 
@@ -41,8 +42,9 @@ declare module 'next-auth/jwt' {
   }
 }
 
-// Initialize default users on startup
+// Seed default users and sample payments on startup
 seedDefaultUsers().catch(console.error)
+seedSamplePayments().catch(console.error)
 
 // NextAuth configuration
 export const authOptions: NextAuthOptions = {
