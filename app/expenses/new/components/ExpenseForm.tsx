@@ -8,6 +8,9 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { InfoIcon } from 'lucide-react'
 import { CategorySelector } from './CategorySelector'
 import { PhotoCapture } from './PhotoCapture'
 import { LocationPicker } from './LocationPicker'
@@ -27,6 +30,7 @@ const expenseFormSchema = z.object({
   }).optional(),
   date: z.date().default(() => new Date()),
   isReimbursement: z.boolean().default(false),
+  reimbursementReason: z.string().optional(),
 })
 
 type ExpenseFormData = z.infer<typeof expenseFormSchema>
@@ -47,11 +51,13 @@ export function ExpenseForm() {
       currency: 'VND',
       date: new Date(),
       isReimbursement: false,
+      reimbursementReason: '',
     },
   })
 
   const selectedCategory = watch('category')
   const amount = watch('amount')
+  const isReimbursement = watch('isReimbursement')
 
   const handleTemplateSelect = (template: any) => {
     // Pre-fill form with template data
@@ -68,14 +74,49 @@ export function ExpenseForm() {
   const onSubmit = async (data: ExpenseFormData) => {
     setIsSubmitting(true)
     try {
+      // Create expense with reimbursement flag
+      const expenseData = {
+        ...data,
+        needsReimbursement: data.isReimbursement,
+        amountCents: Math.round(data.amount * 100), // Convert to cents
+        receiptPhotos: photos.map(file => URL.createObjectURL(file)), // Convert files to URLs
+      }
+      
+      console.log('Submitting expense:', expenseData)
+      
       // TODO: Implement API call to create expense
-      console.log('Submitting expense:', data)
+      // const response = await fetch('/api/expenses', {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify(expenseData)
+      // })
       
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000))
       
-      // TODO: Show success message and redirect
-      alert('Expense created successfully!')
+      // If reimbursement requested, create reimbursement request
+      if (data.isReimbursement) {
+        console.log('Creating reimbursement request for expense')
+        // TODO: Implement reimbursement request creation
+        // const reimbursementData = {
+        //   expenseId: response.id,
+        //   requestorId: currentUser.id,
+        //   propertyId: currentProperty.id,
+        //   amountCents: expenseData.amountCents,
+        //   currency: data.currency
+        // }
+        // await fetch('/api/reimbursements', {
+        //   method: 'POST',
+        //   headers: { 'Content-Type': 'application/json' },
+        //   body: JSON.stringify(reimbursementData)
+        // })
+      }
+      
+      // Show success message
+      const message = data.isReimbursement 
+        ? 'Expense created and reimbursement request submitted!'
+        : 'Expense created successfully!'
+      alert(message)
     } catch (error) {
       console.error('Error creating expense:', error)
       alert('Failed to create expense. Please try again.')
@@ -165,6 +206,52 @@ export function ExpenseForm() {
         <LocationPicker
           onLocationSelect={(location) => setValue('location', location, { shouldDirty: true })}
         />
+      </div>
+
+      {/* Reimbursement Request */}
+      <div className="space-y-3">
+        <div className="flex items-center space-x-2">
+          <Checkbox
+            id="isReimbursement"
+            checked={isReimbursement}
+            onCheckedChange={(checked) => {
+              setValue('isReimbursement', !!checked, { shouldDirty: true })
+              if (!checked) {
+                setValue('reimbursementReason', '', { shouldDirty: true })
+              }
+            }}
+          />
+          <Label 
+            htmlFor="isReimbursement" 
+            className="text-base font-medium cursor-pointer"
+          >
+            Request reimbursement for this expense
+          </Label>
+        </div>
+        
+        {isReimbursement && (
+          <>
+            <Alert>
+              <InfoIcon className="h-4 w-4" />
+              <AlertDescription>
+                This expense will be flagged for reimbursement and sent to property owners for approval.
+                You'll receive notifications about the approval status and payment.
+              </AlertDescription>
+            </Alert>
+            
+            <div className="space-y-2">
+              <Label htmlFor="reimbursementReason" className="text-sm font-medium">
+                Reason for reimbursement (optional)
+              </Label>
+              <Textarea
+                id="reimbursementReason"
+                placeholder="Why should this expense be reimbursed? (e.g., emergency repair, pre-approved purchase)"
+                className="text-sm"
+                {...register('reimbursementReason')}
+              />
+            </div>
+          </>
+        )}
       </div>
 
       {/* Submit Button - Large touch target */}

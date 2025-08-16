@@ -1,6 +1,7 @@
 import { z } from 'zod'
+import { getAllPredefinedCategories } from './expense-category'
 
-// Expense category enum
+// Expense category enum (keeping for backward compatibility)
 export const ExpenseCategory = {
   UTILITIES: 'Utilities',
   REPAIRS: 'Repairs',
@@ -11,6 +12,16 @@ export const ExpenseCategory = {
 } as const
 
 export type ExpenseCategoryType = typeof ExpenseCategory[keyof typeof ExpenseCategory]
+
+// Enhanced category selection schema
+export const ExpenseCategorySelectionSchema = z.object({
+  categoryId: z.string().min(1, 'Category is required'),
+  subcategoryId: z.string().optional(),
+  confidence: z.number().min(0).max(1).optional(), // For auto-categorization confidence
+  isAutoSuggested: z.boolean().default(false)
+})
+
+export type ExpenseCategorySelection = z.infer<typeof ExpenseCategorySelectionSchema>
 
 // Location data structure for geolocation
 export const LocationSchema = z.object({
@@ -29,7 +40,10 @@ export const ExpenseSchema = z.object({
   userId: z.string().uuid('Invalid user ID format'),
   amountCents: z.number().int().positive('Amount must be positive (in cents)'),
   currency: z.string().length(3, 'Currency must be 3-letter code').default('USD'),
-  category: z.enum(['Utilities', 'Repairs', 'Supplies', 'Cleaning', 'Maintenance', 'Other']),
+  // Enhanced category system
+  categorySelection: ExpenseCategorySelectionSchema,
+  // Legacy category field (for backward compatibility)
+  category: z.enum(['Utilities', 'Repairs', 'Supplies', 'Cleaning', 'Maintenance', 'Other']).optional(),
   description: z.string().min(1, 'Expense description is required'),
   receiptPhotos: z.array(z.string().url('Invalid receipt photo URL')).default([]),
   needsReimbursement: z.boolean().default(false),
@@ -40,7 +54,16 @@ export const ExpenseSchema = z.object({
   createdBy: z.string().uuid('Invalid creator ID format'),
   createdAt: z.date(),
   updatedAt: z.date(),
-  deletedAt: z.date().optional() // For soft deletes
+  deletedAt: z.date().optional(), // For soft deletes
+  // Tax-related fields
+  isTaxDeductible: z.boolean().default(false),
+  taxCategory: z.string().optional(),
+  // Multi-property allocation
+  propertyAllocation: z.array(z.object({
+    propertyId: z.string().uuid(),
+    percentage: z.number().min(0).max(100),
+    amount: z.number().int().nonnegative()
+  })).optional()
 })
 
 export type Expense = z.infer<typeof ExpenseSchema>

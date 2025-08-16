@@ -8,12 +8,14 @@ export * from './db/models/tenant'
 export * from './db/models/property'
 export * from './db/models/payment'
 export * from './db/models/expense'
+export * from './db/models/agreement'
 
 // Export all operations
 export * from './db/operations/tenants'
 export * from './db/operations/properties'
 export * from './db/operations/payments'
 export * from './db/operations/expenses'
+export * from './db/operations/agreements'
 
 // Database health check
 export async function checkDatabaseConnection(): Promise<boolean> {

@@ -9,6 +9,10 @@ import {
   UpdateExpenseSchema,
   ExpenseFiltersSchema
 } from '../models/expense'
+import { trackCategoryUsage, getCategorySuggestions } from './expense-categories'
+import { getTaxCategory } from '../models/expense-category'
+import { getMLCategorySuggestions, learnFromUserFeedback, CategorySuggestion } from '../categorization/ml-engine'
+import { analyzeReceiptText, processReceiptImage, OCRAnalysisResult } from '../categorization/ocr-analyzer'
 import { v4 as uuidv4 } from 'uuid'
 
 // Generate Redis keys for expense data
@@ -29,11 +33,19 @@ export async function createExpense(input: CreateExpenseInput): Promise<Expense>
     const id = uuidv4()
     const now = new Date()
     
+    // Set tax category based on category selection
+    const taxCategory = getTaxCategory(validatedInput.categorySelection.categoryId)
+    
     const expense: Expense = {
       ...validatedInput,
       id,
       createdAt: now,
-      updatedAt: now
+      updatedAt: now,
+      // Set legacy category for backward compatibility
+      category: validatedInput.category || 'Other',
+      // Set tax information
+      taxCategory,
+      isTaxDeductible: true // Default to true for business expenses
     }
 
     // Validate complete expense object
@@ -57,7 +69,9 @@ export async function createExpense(input: CreateExpenseInput): Promise<Expense>
       expenseDate: validatedExpense.expenseDate.toISOString(),
       reimbursedDate: validatedExpense.reimbursedDate?.toISOString() || '',
       receiptPhotos: JSON.stringify(validatedExpense.receiptPhotos),
-      location: validatedExpense.location ? JSON.stringify(validatedExpense.location) : ''
+      location: validatedExpense.location ? JSON.stringify(validatedExpense.location) : '',
+      categorySelection: JSON.stringify(validatedExpense.categorySelection),
+      propertyAllocation: validatedExpense.propertyAllocation ? JSON.stringify(validatedExpense.propertyAllocation) : ''
     })
     
     // Add to various indexes
@@ -72,6 +86,20 @@ export async function createExpense(input: CreateExpenseInput): Promise<Expense>
     }
     
     await pipeline.exec()
+
+    // Track category usage for analytics
+    try {
+      await trackCategoryUsage(
+        validatedExpense.categorySelection.categoryId,
+        validatedExpense.categorySelection.subcategoryId,
+        validatedExpense.propertyId,
+        validatedExpense.userId,
+        validatedExpense.amountCents
+      )
+    } catch (error) {
+      console.error('Error tracking category usage:', error)
+      // Don't fail the expense creation if usage tracking fails
+    }
 
     return validatedExpense
   } catch (error) {
@@ -101,12 +129,15 @@ export async function getExpense(id: string): Promise<Expense | null> {
       amountCents: parseInt(data.amountCents),
       needsReimbursement: data.needsReimbursement === 'true',
       isReimbursed: data.isReimbursed === 'true',
+      isTaxDeductible: data.isTaxDeductible === 'true',
       createdAt: new Date(data.createdAt),
       updatedAt: new Date(data.updatedAt),
       expenseDate: new Date(data.expenseDate),
       reimbursedDate: data.reimbursedDate ? new Date(data.reimbursedDate) : undefined,
       receiptPhotos: data.receiptPhotos ? JSON.parse(data.receiptPhotos) : [],
-      location: data.location ? JSON.parse(data.location) : undefined
+      location: data.location ? JSON.parse(data.location) : undefined,
+      categorySelection: data.categorySelection ? JSON.parse(data.categorySelection) : { categoryId: data.category || 'other' },
+      propertyAllocation: data.propertyAllocation ? JSON.parse(data.propertyAllocation) : undefined
     }
 
     return ExpenseSchema.parse(expense)
@@ -337,15 +368,143 @@ export async function getExpenseTotalsByCategory(propertyId: string, dateFrom?: 
     const totals: Record<string, number> = {}
     
     expenses.forEach(expense => {
-      if (!totals[expense.category]) {
-        totals[expense.category] = 0
+      const categoryId = expense.categorySelection?.categoryId || expense.category || 'other'
+      if (!totals[categoryId]) {
+        totals[categoryId] = 0
       }
-      totals[expense.category] += expense.amountCents
+      totals[categoryId] += expense.amountCents
     })
     
     return totals
   } catch (error) {
     console.error('Error calculating expense totals by category:', error)
     return {}
+  }
+}
+
+// Get category suggestions for an expense
+export async function getExpenseCategorySuggestions(
+  merchantName: string,
+  description: string,
+  propertyId: string
+): Promise<{ categoryId: string; subcategoryId?: string; confidence: number; reason: string }[]> {
+  try {
+    return await getCategorySuggestions(merchantName, description, propertyId)
+  } catch (error) {
+    console.error('Error getting expense category suggestions:', error)
+    return []
+  }
+}
+
+// Enhanced category suggestions with ML and OCR
+export async function getEnhancedCategorySuggestions(
+  merchantName: string,
+  description: string,
+  receiptPhotos: string[],
+  propertyId: string
+): Promise<CategorySuggestion[]> {
+  try {
+    let receiptText = ''
+    let ocrResults: OCRAnalysisResult[] = []
+    
+    // Process receipt images if available
+    if (receiptPhotos.length > 0) {
+      for (const receiptUrl of receiptPhotos.slice(0, 3)) { // Process up to 3 receipts
+        try {
+          const ocrResult = await processReceiptImage(receiptUrl)
+          ocrResults.push(ocrResult)
+          receiptText += ` ${ocrResult.extractedText}`
+        } catch (error) {
+          console.error('Error processing receipt image:', error)
+        }
+      }
+    }
+    
+    // Get ML-based suggestions
+    const mlSuggestions = await getMLCategorySuggestions(
+      merchantName,
+      description,
+      receiptText.trim(),
+      propertyId
+    )
+    
+    // Get basic pattern suggestions as fallback
+    const basicSuggestions = await getCategorySuggestions(merchantName, description, propertyId)
+    
+    // Convert basic suggestions to CategorySuggestion format
+    const convertedBasicSuggestions: CategorySuggestion[] = basicSuggestions.map(s => ({
+      categoryId: s.categoryId,
+      subcategoryId: s.subcategoryId,
+      confidence: s.confidence,
+      reason: s.reason as 'merchant' | 'ocr' | 'pattern' | 'manual' | 'ml',
+      suggestions: [s.reason]
+    }))
+    
+    // Combine and deduplicate suggestions
+    const allSuggestions = [...mlSuggestions, ...convertedBasicSuggestions]
+    const uniqueSuggestions = allSuggestions.reduce((acc, current) => {
+      const existing = acc.find(s => 
+        s.categoryId === current.categoryId && 
+        s.subcategoryId === current.subcategoryId
+      )
+      
+      if (!existing || current.confidence > existing.confidence) {
+        return [
+          ...acc.filter(s => !(s.categoryId === current.categoryId && s.subcategoryId === current.subcategoryId)),
+          current
+        ]
+      }
+      return acc
+    }, [] as CategorySuggestion[])
+    
+    return uniqueSuggestions
+      .sort((a, b) => b.confidence - a.confidence)
+      .slice(0, 5) // Return top 5 suggestions
+  } catch (error) {
+    console.error('Error getting enhanced category suggestions:', error)
+    return []
+  }
+}
+
+// Process receipt text for categorization
+export async function processReceiptForCategorization(
+  receiptText: string
+): Promise<{ categoryHints: string[]; confidence: number; extractedData: any }> {
+  try {
+    const analysis = analyzeReceiptText(receiptText)
+    
+    return {
+      categoryHints: analysis.categoryHints,
+      confidence: analysis.confidence,
+      extractedData: {
+        merchantName: analysis.merchantName,
+        amount: analysis.amount,
+        date: analysis.date
+      }
+    }
+  } catch (error) {
+    console.error('Error processing receipt text:', error)
+    return {
+      categoryHints: [],
+      confidence: 0,
+      extractedData: {}
+    }
+  }
+}
+
+// Learn from user categorization feedback
+export async function recordCategorizationFeedback(
+  originalSuggestions: CategorySuggestion[],
+  userSelection: { categoryId: string; subcategoryId?: string },
+  merchantName: string,
+  description: string,
+  receiptText: string,
+  propertyId: string
+): Promise<void> {
+  try {
+    const combinedText = `${merchantName} ${description} ${receiptText}`.trim()
+    await learnFromUserFeedback(originalSuggestions, userSelection, combinedText, propertyId)
+  } catch (error) {
+    console.error('Error recording categorization feedback:', error)
   }
 }
