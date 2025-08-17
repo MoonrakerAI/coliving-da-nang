@@ -250,7 +250,7 @@ export async function sendManualReminder(
 ): Promise<{ success: boolean; error?: string }> {
   try {
     // Get payment details (this would need to be implemented in the payments DB module)
-    const payment = await getPaymentById(paymentId)
+    const payment = await getPaymentByIdForReminder(paymentId)
     if (!payment) {
       return { success: false, error: 'Payment not found' }
     }
@@ -293,7 +293,7 @@ async function getTenantReminderPreferences(tenantId: string): Promise<TenantRem
 }
 
 // Placeholder for payment lookup - this would need to be implemented
-async function getPaymentById(paymentId: string): Promise<any> {
+async function getPaymentByIdForReminder(paymentId: string): Promise<any> {
   // TODO: Implement payment lookup by ID
   return null
 }

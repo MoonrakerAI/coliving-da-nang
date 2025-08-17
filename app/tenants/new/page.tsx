@@ -335,7 +335,7 @@ export default function NewTenant() {
             {formState.emergencyContacts.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <p>No emergency contacts added yet</p>
-                <p className="text-sm">Click "Add Contact" to add emergency contact information</p>
+                <p className="text-sm">Click &quot;Add Contact&quot; to add emergency contact information</p>
               </div>
             ) : (
               <div className="space-y-4">

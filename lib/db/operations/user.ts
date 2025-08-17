@@ -23,7 +23,7 @@ import {
 import { AuditEventType } from '../models/audit-log'
 
 // In-memory storage for development (replace with actual database in production)
-let users: User[] = []
+const users: User[] = []
 
 // Password hashing
 export async function hashPassword(password: string): Promise<string> {

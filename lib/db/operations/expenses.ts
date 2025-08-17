@@ -405,7 +405,7 @@ export async function getEnhancedCategorySuggestions(
 ): Promise<CategorySuggestion[]> {
   try {
     let receiptText = ''
-    let ocrResults: OCRAnalysisResult[] = []
+    const ocrResults: OCRAnalysisResult[] = []
     
     // Process receipt images if available
     if (receiptPhotos.length > 0) {

@@ -268,7 +268,7 @@ export default function TaskKanbanView() {
         <h3 className="font-medium text-blue-900 mb-2">Kanban Board Tips</h3>
         <ul className="text-sm text-blue-800 space-y-1">
           <li>• Drag tasks between columns to update their status</li>
-          <li>• The "In Progress" column has a work-in-progress limit of 5 tasks</li>
+          <li>• The &quot;In Progress&quot; column has a work-in-progress limit of 5 tasks</li>
           <li>• Click on any task card to view details and make updates</li>
           <li>• Use filters to focus on specific categories, priorities, or assignees</li>
         </ul>

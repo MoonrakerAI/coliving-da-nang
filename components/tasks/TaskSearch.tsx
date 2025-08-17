@@ -239,7 +239,7 @@ export function TaskSearch({
             {/* No Results */}
             {query.trim().length >= 2 && results.length === 0 && !isSearching && (
               <div className="px-3 py-6 text-center text-gray-500 text-sm">
-                No tasks found for "{query}"
+                No tasks found for &quot;{query}&quot;
               </div>
             )}
 

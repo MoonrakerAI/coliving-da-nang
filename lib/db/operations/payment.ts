@@ -11,7 +11,7 @@ import {
 } from '../models/payment'
 
 // In-memory storage for development (replace with actual database in production)
-let payments: Payment[] = []
+const payments: Payment[] = []
 
 // Payment CRUD operations
 export async function createPayment(paymentData: CreatePayment): Promise<Payment> {

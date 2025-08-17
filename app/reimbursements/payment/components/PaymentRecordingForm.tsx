@@ -291,7 +291,7 @@ export function PaymentRecordingForm({
           <Alert>
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription>
-              <strong>Important:</strong> Recording this payment will mark the reimbursement as "Paid" 
+              <strong>Important:</strong> Recording this payment will mark the reimbursement as &quot;Paid&quot; 
               and notify the requestor. This action cannot be undone. Please ensure the payment 
               has been successfully processed before proceeding.
             </AlertDescription>
