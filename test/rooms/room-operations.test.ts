@@ -237,7 +237,7 @@ describe('Room Operations', () => {
       vi.mocked(db.hgetall).mockResolvedValue({})
 
       const updateInput: UpdateRoomInput = {
-        id: 'nonexistent-id',
+        id: '123e4567-e89b-12d3-a456-426614174999',
         monthlyRent: 850
       }
 
@@ -314,7 +314,7 @@ describe('Room Operations', () => {
           lastInspection: ''
         })
 
-      const result = await getPropertyRooms('property1')
+      const result = await getPropertyRooms('123e4567-e89b-12d3-a456-426614174001')
 
       expect(result).toHaveLength(2)
       expect(result[0].number).toBe('A101')
@@ -324,7 +324,7 @@ describe('Room Operations', () => {
     it('should return empty array when no rooms found', async () => {
       vi.mocked(db.smembers).mockResolvedValue([])
 
-      const result = await getPropertyRooms('property1')
+      const result = await getPropertyRooms('123e4567-e89b-12d3-a456-426614174001')
 
       expect(result).toEqual([])
     })
@@ -453,14 +453,17 @@ describe('Room Operations', () => {
 
   describe('calculatePropertyAnalytics', () => {
     it('should calculate analytics correctly', async () => {
-      // Mock getPropertyRooms
-      vi.mocked(db.smembers).mockResolvedValueOnce(['room1', 'room2', 'room3'])
-      
-      // Mock room data
+      // Mock room IDs
+      vi.mocked(db.smembers)
+        .mockResolvedValueOnce(['room1', 'room2', 'room3']) // for rooms
+        .mockResolvedValueOnce(['maintenance1', 'maintenance2']) // for maintenance
+        .mockResolvedValue([]) // for occupancy history
+
+      // Mock room details
       vi.mocked(db.hgetall)
         .mockResolvedValueOnce({
           id: 'room1',
-          propertyId: 'property1',
+          propertyId: '123e4567-e89b-12d3-a456-426614174001',
           monthlyRent: '800',
           isAvailable: 'false', // occupied
           features: '[]',
@@ -476,7 +479,7 @@ describe('Room Operations', () => {
         })
         .mockResolvedValueOnce({
           id: 'room2',
-          propertyId: 'property1',
+          propertyId: '123e4567-e89b-12d3-a456-426614174001',
           monthlyRent: '1000',
           isAvailable: 'true', // available
           features: '[]',
@@ -492,7 +495,7 @@ describe('Room Operations', () => {
         })
         .mockResolvedValueOnce({
           id: 'room3',
-          propertyId: 'property1',
+          propertyId: '123e4567-e89b-12d3-a456-426614174001',
           monthlyRent: '900',
           isAvailable: 'false', // occupied
           features: '[]',
@@ -506,10 +509,6 @@ describe('Room Operations', () => {
           type: 'Single',
           number: 'A103'
         })
-
-      // Mock maintenance records
-      vi.mocked(db.smembers).mockResolvedValueOnce(['maintenance1', 'maintenance2'])
-      vi.mocked(db.hgetall)
         .mockResolvedValueOnce({
           id: 'maintenance1',
           title: 'Fix faucet',
@@ -525,13 +524,10 @@ describe('Room Operations', () => {
           updatedAt: '2024-01-02T00:00:00.000Z'
         })
 
-      // Mock occupancy history (empty for simplicity)
-      vi.mocked(db.smembers).mockResolvedValue([])
-
-      const result = await calculatePropertyAnalytics('property1')
+      const result = await calculatePropertyAnalytics('123e4567-e89b-12d3-a456-426614174001')
 
       expect(result).toMatchObject({
-        propertyId: 'property1',
+        propertyId: '123e4567-e89b-12d3-a456-426614174001',
         totalRooms: 3,
         occupiedRooms: 2,
         availableRooms: 1,

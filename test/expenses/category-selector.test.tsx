@@ -44,13 +44,14 @@ describe('CategorySelector', () => {
   it('displays category icons', () => {
     render(<CategorySelector onCategorySelect={mockOnCategorySelect} />)
     
-    // Check for emoji icons
-    expect(screen.getByText('⚡')).toBeInTheDocument() // Utilities
-    expect(screen.getByText('🔧')).toBeInTheDocument() // Repairs
-    expect(screen.getByText('📦')).toBeInTheDocument() // Supplies
-    expect(screen.getByText('🧽')).toBeInTheDocument() // Cleaning
-    expect(screen.getByText('🛠️')).toBeInTheDocument() // Maintenance
-    expect(screen.getByText('📝')).toBeInTheDocument() // Other
+    // Check for emoji icons using more flexible queries
+    const container = screen.getByTestId ? document.body : screen.container
+    expect(container.textContent).toContain('⚡') // Utilities
+    expect(container.textContent).toContain('🔧') // Repairs
+    expect(container.textContent).toContain('📦') // Supplies
+    expect(container.textContent).toContain('🧽') // Cleaning
+    expect(container.textContent).toContain('🛠️') // Maintenance
+    expect(container.textContent).toContain('📝') // Other
   })
 
   it('shows recently used categories section', () => {

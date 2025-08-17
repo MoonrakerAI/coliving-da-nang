@@ -7,29 +7,7 @@ import {
   verifyWebhookSignature 
 } from '@/lib/payments/stripe'
 
-// Mock Stripe
-vi.mock('stripe', () => {
-  const mockStripe = {
-    paymentIntents: {
-      create: vi.fn(),
-      confirm: vi.fn(),
-      retrieve: vi.fn()
-    },
-    customers: {
-      create: vi.fn()
-    },
-    refunds: {
-      create: vi.fn()
-    },
-    webhooks: {
-      constructEvent: vi.fn()
-    }
-  }
-  return {
-    default: vi.fn(() => mockStripe)
-  }
-})
-
+// Create mock Stripe instance
 const mockStripe = {
   paymentIntents: {
     create: vi.fn(),
@@ -47,9 +25,14 @@ const mockStripe = {
   }
 }
 
+// Mock Stripe module - needs to mock the constructor
 vi.mock('stripe', () => {
   return {
-    default: vi.fn(() => mockStripe)
+    default: class MockStripe {
+      constructor() {
+        return mockStripe
+      }
+    }
   }
 })
 

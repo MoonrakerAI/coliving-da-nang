@@ -278,15 +278,15 @@ export const DEFAULT_TEMPLATES = {
 - Room Number: {{room_number}}
 - Lease Start Date: {{lease_start_date}}
 - Lease End Date: {{lease_end_date}}
-- Monthly Rent: ${{monthly_rent}}
-- Security Deposit: ${{security_deposit}}
+- Monthly Rent: $\{{monthly_rent}}
+- Security Deposit: $\{{security_deposit}}
 
 **Agreement:**
 The Tenant agrees to rent the above-described room in the coliving property under the following terms and conditions:
 
-1. **Rent Payment:** Monthly rent of ${{monthly_rent}} is due on the {{rent_due_date}} of each month.
+1. **Rent Payment:** Monthly rent of $\{{monthly_rent}} is due on the {{rent_due_date}} of each month.
 
-2. **Security Deposit:** A security deposit of ${{security_deposit}} is required and will be returned upon satisfactory completion of the lease term.
+2. **Security Deposit:** A security deposit of $\{{security_deposit}} is required and will be returned upon satisfactory completion of the lease term.
 
 3. **House Rules:** Tenant agrees to abide by all house rules and community guidelines.
 
@@ -315,7 +315,7 @@ Property Owner Signature: _________________________ Date: _________
 - Check-out: {{checkout_date}}
 
 **Room:** {{room_number}}
-**Total Cost:** ${{total_cost}}
+**Total Cost:** $\{{total_cost}}
 
 **Terms:**
 This is a short-term accommodation agreement for coliving space. Guest agrees to:
