@@ -39,7 +39,7 @@ export async function GET(
 
     try {
       // Download the signed document from DocuSign
-      const documentBuffer = await DocuSignService.downloadSignedDocument(
+      const documentBuffer = await DocuSignService.getSignedDocument(
         agreement.docusignEnvelopeId,
         '1' // Document ID (assuming single document)
       )
