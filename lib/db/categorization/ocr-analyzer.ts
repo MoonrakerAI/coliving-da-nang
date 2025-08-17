@@ -115,3 +115,45 @@ export async function validateReceiptData(data: ReceiptData): Promise<{
     suggestions
   }
 }
+
+export async function analyzeReceiptText(text: string): Promise<{
+  merchantName?: string
+  totalAmount?: number
+  items: Array<{ description: string; amount: number }>
+}> {
+  // Simple text analysis for receipt data
+  const lines = text.split('\n').map(line => line.trim()).filter(line => line)
+  
+  let merchantName: string | undefined
+  let totalAmount: number | undefined
+  const items: Array<{ description: string; amount: number }> = []
+  
+  // Try to extract merchant name (usually at the top)
+  if (lines.length > 0) {
+    merchantName = lines[0]
+  }
+  
+  // Look for total amount
+  const totalRegex = /total[:\s]+\$?([\d,]+\.\d{2})/i
+  for (const line of lines) {
+    const match = line.match(totalRegex)
+    if (match) {
+      totalAmount = parseFloat(match[1].replace(',', ''))
+      break
+    }
+  }
+  
+  // Extract line items
+  const itemRegex = /^(.+?)\s+\$?([\d,]+\.\d{2})$/
+  for (const line of lines) {
+    const match = line.match(itemRegex)
+    if (match && !line.toLowerCase().includes('total') && !line.toLowerCase().includes('tax')) {
+      items.push({
+        description: match[1].trim(),
+        amount: parseFloat(match[2].replace(',', ''))
+      })
+    }
+  }
+  
+  return { merchantName, totalAmount, items }
+}

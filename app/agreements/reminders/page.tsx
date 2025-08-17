@@ -404,7 +404,7 @@ export default function ReminderManagementPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <Label className="text-sm font-medium">Exclude Weekends</Label>
-                    <p className="text-xs text-gray-600">Don't send reminders on Saturday/Sunday</p>
+                    <p className="text-xs text-gray-600">Don&apos;t send reminders on Saturday/Sunday</p>
                   </div>
                   <Switch
                     checked={config.excludeWeekends}

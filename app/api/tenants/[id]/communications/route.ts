@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { addCommunicationRecord } from '@/lib/db/operations/tenants'
-import { auth } from '@/lib/auth'
+import { requireAuth } from '@/lib/auth-config';
 
 // POST /api/tenants/[id]/communications - Add communication record
 export async function POST(
@@ -8,7 +8,7 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await auth()
+    const session = await requireAuth()
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }

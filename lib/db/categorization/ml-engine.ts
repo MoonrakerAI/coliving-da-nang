@@ -67,3 +67,30 @@ export async function trainModel(expenses: Array<{ description: string, category
   // Mock training function for development
   console.log(`Training ML model with ${expenses.length} expenses`)
 }
+
+export interface CategorySuggestion extends MLCategorySuggestion {}
+
+export async function getMLCategorySuggestions(
+  description: string,
+  merchantName: string,
+  amount: number,
+  receiptText?: string
+): Promise<CategorySuggestion[]> {
+  const predictions = await predictExpenseCategory(description, merchantName, amount, receiptText)
+  
+  return predictions.map(pred => ({
+    category: pred.category,
+    confidence: pred.confidence,
+    source: 'ml' as const,
+    reasoning: pred.reasoning
+  }))
+}
+
+export async function learnFromUserFeedback(
+  expenseId: string,
+  selectedCategory: string,
+  mlSuggestions: CategorySuggestion[]
+): Promise<void> {
+  // Mock learning function for development
+  console.log(`Learning from user feedback: expense ${expenseId} categorized as ${selectedCategory}`)
+}

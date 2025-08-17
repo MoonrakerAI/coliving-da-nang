@@ -3,7 +3,7 @@ import {
   addTenantDocument, 
   removeTenantDocument 
 } from '@/lib/db/operations/tenants'
-import { auth } from '@/lib/auth'
+import { requireAuth } from '@/lib/auth-config';
 
 // POST /api/tenants/[id]/documents - Upload tenant document
 export async function POST(
@@ -11,7 +11,7 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await auth()
+    const session = await requireAuth()
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -57,7 +57,7 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await auth()
+    const session = await requireAuth()
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }

@@ -5,7 +5,7 @@ import {
   deleteTenant 
 } from '@/lib/db/operations/tenants'
 import { UpdateTenantSchema } from '@/lib/db/models/tenant'
-import { auth } from '@/lib/auth'
+import { requireAuth } from '@/lib/auth-config';
 
 // GET /api/tenants/[id] - Get tenant by ID
 export async function GET(
@@ -13,7 +13,7 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await auth()
+    const session = await requireAuth()
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -40,7 +40,7 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await auth()
+    const session = await requireAuth()
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -84,7 +84,7 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await auth()
+    const session = await requireAuth()
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }

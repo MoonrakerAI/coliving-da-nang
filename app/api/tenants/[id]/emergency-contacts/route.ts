@@ -5,7 +5,7 @@ import {
   removeEmergencyContact 
 } from '@/lib/db/operations/tenants'
 import { EmergencyContactSchema } from '@/lib/db/models/tenant'
-import { auth } from '@/lib/auth'
+import { requireAuth } from '@/lib/auth-config';
 
 // POST /api/tenants/[id]/emergency-contacts - Add emergency contact
 export async function POST(
@@ -13,7 +13,7 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await auth()
+    const session = await requireAuth()
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -60,7 +60,7 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await auth()
+    const session = await requireAuth()
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -94,7 +94,7 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await auth()
+    const session = await requireAuth()
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }

@@ -25,11 +25,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { AgreementTemplate } from '@/lib/db/models/agreement'
 
-interface TemplateListProps {
-  propertyId?: string
-}
-
-export default function AgreementTemplatesPage({ propertyId }: TemplateListProps) {
+export default function AgreementTemplatesPage() {
   const router = useRouter()
   const [templates, setTemplates] = useState<AgreementTemplate[]>([])
   const [loading, setLoading] = useState(true)
@@ -38,12 +34,12 @@ export default function AgreementTemplatesPage({ propertyId }: TemplateListProps
 
   useEffect(() => {
     loadTemplates()
-  }, [propertyId])
+  }, [])
 
   const loadTemplates = async () => {
     try {
       setLoading(true)
-      const response = await fetch(`/api/agreements/templates${propertyId ? `?propertyId=${propertyId}` : ''}`)
+      const response = await fetch('/api/agreements/templates')
       if (response.ok) {
         const data = await response.json()
         setTemplates(data)
