@@ -4,17 +4,6 @@
   "devCommand": "npm run dev",
   "installCommand": "npm install",
   "outputDirectory": ".next",
-  "env": {
-    "KV_REST_API_URL": "@KV_REST_API_URL",
-    "KV_REST_API_TOKEN": "@KV_REST_API_TOKEN",
-    "KV_REST_API_READ_ONLY_TOKEN": "@KV_REST_API_READ_ONLY_TOKEN",
-    "REDIS_URL": "@REDIS_URL",
-    "BLOB_READ_WRITE_TOKEN": "@BLOB_READ_WRITE_TOKEN",
-    "RESEND_API_KEY": "@RESEND_API_KEY",
-    "STRIPE_SECRET_KEY": "@STRIPE_SECRET_KEY",
-    "STRIPE_PUBLISHABLE_KEY": "@STRIPE_PUBLISHABLE_KEY",
-    "NEXTAUTH_SECRET": "@NEXTAUTH_SECRET"
-  },
   "functions": {
     "app/api/**/*.ts": {
       "runtime": "nodejs18.x"
