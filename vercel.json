@@ -5,7 +5,6 @@
   "installCommand": "npm install",
   "outputDirectory": ".next",
   "env": {
-    "NODE_ENV": "@NODE_ENV",
     "KV_URL": "@KV_URL",
     "KV_REST_API_URL": "@KV_REST_API_URL",
     "KV_REST_API_TOKEN": "@KV_REST_API_TOKEN",
