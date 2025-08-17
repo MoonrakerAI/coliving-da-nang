@@ -10,7 +10,7 @@ import TemplateSelector from '@/components/communications/TemplateSelector';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { MessageSquare, FileText, AlertTriangle, Template, Plus } from 'lucide-react';
+import { MessageSquare, FileText, AlertTriangle, FileTemplate, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function TenantCommunicationsPage() {
@@ -247,7 +247,7 @@ export default function TenantCommunicationsPage() {
             Quick Note
           </Button>
           <Button onClick={() => setActiveTab('templates')}>
-            <Template className="h-4 w-4 mr-2" />
+            <FileTemplate className="h-4 w-4 mr-2" />
             Use Template
           </Button>
         </div>

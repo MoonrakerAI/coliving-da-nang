@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { authOptions } from '@/lib/auth-config';
 import { TemplateOperations } from '@/lib/db/operations/communications';
 import { UpdateTemplateSchema } from '@/lib/db/models/communication';
 

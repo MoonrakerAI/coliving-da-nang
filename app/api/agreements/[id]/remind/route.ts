@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAgreement, updateAgreement } from '@/lib/db/operations/agreements'
 import { AgreementNotificationService } from '@/lib/agreements/notifications'
-import { requireAuth } from '@/lib/auth'
+import { requireAuth } from '@/lib/auth-config'
 
 // POST /api/agreements/[id]/remind - Send reminder for agreement
 export async function POST(

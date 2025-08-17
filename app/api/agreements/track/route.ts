@@ -4,7 +4,7 @@ import {
   getAgreementTemplate,
 } from '@/lib/db/operations/agreements'
 import { getProperty } from '@/lib/db/operations/properties'
-import { requireAuth } from '@/lib/auth'
+import { requireAuth } from '@/lib/auth-config'
 
 // GET /api/agreements/track - Get all agreements with tracking details
 export async function GET(request: NextRequest) {

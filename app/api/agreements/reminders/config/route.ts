@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { AutomatedReminderService, ReminderConfig } from '@/lib/agreements/reminders'
-import { requireAuth } from '@/lib/auth'
+import { requireAuth } from '@/lib/auth-config'
 
 // GET /api/agreements/reminders/config - Get reminder configuration
 export async function GET(request: NextRequest) {

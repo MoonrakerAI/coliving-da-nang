@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAgreement } from '@/lib/db/operations/agreements'
 import { DocuSignService } from '@/lib/agreements/docusign'
-import { requireAuth } from '@/lib/auth'
+import { requireAuth } from '@/lib/auth-config'
 
 // GET /api/agreements/[id]/document - Download signed agreement document
 export async function GET(

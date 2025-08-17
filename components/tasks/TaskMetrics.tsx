@@ -6,8 +6,8 @@ import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { 
   ChartBarIcon,
-  TrendingUpIcon,
-  TrendingDownIcon,
+  ArrowTrendingUpIcon,
+  ArrowTrendingDownIcon,
   ClockIcon,
   ExclamationTriangleIcon,
   CheckCircleIcon,
@@ -121,9 +121,9 @@ export function TaskMetrics({ metrics, className = "" }: TaskMetricsProps) {
                         {trend.change > 0 ? '+' : ''}{trend.change.toFixed(1)}%
                       </span>
                       {trend.isPositive ? (
-                        <TrendingUpIcon className="h-5 w-5 text-green-500 ml-1" />
+                        <ArrowTrendingUpIcon className="h-5 w-5 text-green-500 ml-1" />
                       ) : (
-                        <TrendingDownIcon className="h-5 w-5 text-red-500 ml-1" />
+                        <ArrowTrendingDownIcon className="h-5 w-5 text-red-500 ml-1" />
                       )}
                     </>
                   )}

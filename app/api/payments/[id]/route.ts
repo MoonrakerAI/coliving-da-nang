@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { authOptions } from '@/lib/auth-config'
 import { getPaymentById, updatePayment } from '@/lib/db/operations/payment'
 import { UpdatePaymentSchema } from '@/lib/db/models/payment'
 

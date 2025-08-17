@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { DocumentStorageService } from '@/lib/agreements/storage'
 import { getAgreement } from '@/lib/db/operations/agreements'
-import { requireAuth } from '@/lib/auth'
+import { requireAuth } from '@/lib/auth-config'
 
 // GET /api/agreements/[id]/documents - List all documents for an agreement
 export async function GET(

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { sendManualReminder } from '@/lib/email/reminder-scheduler'
-import { getSession } from '@/lib/auth'
+import { getSession } from '@/lib/auth-config'
 import { z } from 'zod'
 
 const SendReminderSchema = z.object({

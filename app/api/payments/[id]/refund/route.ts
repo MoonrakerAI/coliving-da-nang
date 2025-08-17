@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { authOptions } from '@/lib/auth-config'
 import { getPaymentById, createPayment } from '@/lib/db/operations/payment'
 import { PaymentStatus } from '@/lib/db/models/payment'
 import { z } from 'zod'

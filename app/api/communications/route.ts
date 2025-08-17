@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { authOptions } from '@/lib/auth-config';
 import { CommunicationOperations } from '@/lib/db/operations/communications';
 import { CreateCommunicationSchema, CommunicationFilterSchema } from '@/lib/db/models/communication';
 
