@@ -382,11 +382,6 @@ export default function AgreementDocumentsPage() {
                           </span>
                           <div>
                             <div className="font-medium">{document.fileName}</div>
-                            {document.metadata.description && (
-                              <div className="text-sm text-gray-500">
-                                {document.metadata.description}
-                              </div>
-                            )}
                           </div>
                         </div>
                       </TableCell>
