@@ -8,6 +8,28 @@ import {
 } from '@/lib/payments/stripe'
 
 // Mock Stripe
+vi.mock('stripe', () => {
+  const mockStripe = {
+    paymentIntents: {
+      create: vi.fn(),
+      confirm: vi.fn(),
+      retrieve: vi.fn()
+    },
+    customers: {
+      create: vi.fn()
+    },
+    refunds: {
+      create: vi.fn()
+    },
+    webhooks: {
+      constructEvent: vi.fn()
+    }
+  }
+  return {
+    default: vi.fn(() => mockStripe)
+  }
+})
+
 const mockStripe = {
   paymentIntents: {
     create: vi.fn(),

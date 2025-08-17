@@ -24,11 +24,17 @@ describe('Database Models Validation', () => {
       firstName: 'John',
       lastName: 'Doe',
       phone: '+1234567890',
-      emergencyContact: {
+      emergencyContacts: [{
+        id: '123e4567-e89b-12d3-a456-426614174002',
         name: 'Jane Doe',
         phone: '+1234567891',
-        relationship: 'Sister'
-      },
+        email: 'jane@example.com',
+        relationship: 'Sister',
+        isPrimary: true,
+        verified: false,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }],
       status: 'Active' as const,
       propertyId: '123e4567-e89b-12d3-a456-426614174001',
       roomNumber: '101',
@@ -63,11 +69,17 @@ describe('Database Models Validation', () => {
         firstName: 'John',
         lastName: 'Doe',
         phone: '+1234567890',
-        emergencyContact: {
+        emergencyContacts: [{
+          id: '123e4567-e89b-12d3-a456-426614174002',
           name: 'Jane Doe',
           phone: '+1234567891',
-          relationship: 'Sister'
-        },
+          email: 'jane@example.com',
+          relationship: 'Sister',
+          isPrimary: true,
+          verified: false,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        }],
         status: 'Active' as const,
         propertyId: '123e4567-e89b-12d3-a456-426614174001',
         roomNumber: '101',
@@ -179,6 +191,11 @@ describe('Database Models Validation', () => {
       userId: '123e4567-e89b-12d3-a456-426614174002',
       amountCents: 15000,
       currency: 'USD',
+      categorySelection: {
+        categoryId: 'utilities',
+        confidence: 1.0,
+        isAutoSuggested: false
+      },
       category: 'Utilities' as const,
       description: 'Electricity bill',
       receiptPhotos: ['https://example.com/receipt.jpg'],

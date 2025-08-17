@@ -63,7 +63,7 @@ describe('ReimbursementExportService', () => {
     it('should export basic CSV format', () => {
       const csv = ReimbursementExportService.exportToCSV(mockReimbursements)
       
-      expect(csv).toContain('ID,Expense ID,Requestor ID')
+      expect(csv).toContain('"ID","Expense ID","Requestor ID"')
       expect(csv).toContain('123e4567-e89b-12d3-a456-426614174000')
       expect(csv).toContain('50.00') // Amount in dollars
       expect(csv).toContain('Paid')
@@ -95,7 +95,7 @@ describe('ReimbursementExportService', () => {
     it('should handle empty array', () => {
       const csv = ReimbursementExportService.exportToCSV([])
       
-      expect(csv).toContain('ID,Expense ID,Requestor ID')
+      expect(csv).toContain('"ID","Expense ID","Requestor ID"')
       expect(csv.split('\n')).toHaveLength(1) // Only header row
     })
 
@@ -254,7 +254,7 @@ describe('ReimbursementExportService', () => {
       })
 
       expect(mockDownloadFile).toHaveBeenCalledWith(
-        expect.stringContaining('ID,Expense ID'),
+        expect.stringContaining('"ID","Expense ID"'),
         expect.stringMatching(/reimbursements-\d{4}-\d{2}-\d{2}\.csv/),
         'text/csv'
       )

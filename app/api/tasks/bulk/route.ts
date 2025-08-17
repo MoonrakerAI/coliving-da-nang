@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
       const task = await kv.hgetall(`task:${taskId}`)
       if (!task || task.deletedAt) continue
 
-      let updates: Record<string, any> = {
+      const updates: Record<string, any> = {
         updatedAt: now
       }
 

@@ -235,7 +235,7 @@ export function ExpenseForm() {
               <InfoIcon className="h-4 w-4" />
               <AlertDescription>
                 This expense will be flagged for reimbursement and sent to property owners for approval.
-                You'll receive notifications about the approval status and payment.
+                You&apos;ll receive notifications about the approval status and payment.
               </AlertDescription>
             </Alert>
             

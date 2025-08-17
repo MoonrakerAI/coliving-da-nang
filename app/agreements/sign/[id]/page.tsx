@@ -343,7 +343,7 @@ export default function AgreementSigningPage() {
                     </Button>
                     
                     <p className="text-xs text-gray-500 text-center">
-                      You'll be redirected to DocuSign's secure signing platform
+                      You&apos;ll be redirected to DocuSign&apos;s secure signing platform
                     </p>
                   </>
                 ) : (

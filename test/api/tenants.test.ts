@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { NextRequest } from 'next/server'
 import { GET, POST } from '@/app/api/tenants/route'
 import { GET as getTenant, PATCH as updateTenant, DELETE as deleteTenant } from '@/app/api/tenants/[id]/route'
@@ -9,14 +9,19 @@ import { createTenant, getTenant as getTenantFromDb, deleteTenant as deleteTenan
 import { CreateTenantInput } from '@/lib/db/models/tenant'
 
 // Mock auth
-jest.mock('@/lib/auth', () => ({
-  auth: jest.fn(() => Promise.resolve({
+vi.mock('@/lib/auth', () => ({
+  auth: vi.fn(() => Promise.resolve({
     user: { id: 'test-user', email: 'test@example.com' }
   }))
 }))
 
 // Mock database
-jest.mock('@/lib/db/operations/tenants')
+vi.mock('@/lib/db/operations/tenants', () => ({
+  createTenant: vi.fn(),
+  getTenant: vi.fn(),
+  deleteTenant: vi.fn(),
+  updateTenant: vi.fn()
+}))
 
 describe('Tenant Management API', () => {
   const mockTenant = {

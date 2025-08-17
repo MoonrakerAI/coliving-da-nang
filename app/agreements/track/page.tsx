@@ -90,7 +90,7 @@ export default function AgreementTrackingPage() {
   }
 
   const filterAndSortAgreements = () => {
-    let filtered = agreements.filter(agreement => {
+    const filtered = agreements.filter(agreement => {
       const matchesSearch = 
         agreement.prospectName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         agreement.prospectEmail.toLowerCase().includes(searchTerm.toLowerCase()) ||

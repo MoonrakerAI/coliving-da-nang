@@ -225,7 +225,7 @@ export function PaymentFilters({ onFilterChange, totalCounts }: PaymentFiltersPr
               )}
               {filters.search && (
                 <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-indigo-100 text-indigo-800">
-                  Search: "{filters.search}"
+                  Search: &ldquo;{filters.search}&rdquo;
                 </span>
               )}
               {(filters.dateRange.start || filters.dateRange.end) && (

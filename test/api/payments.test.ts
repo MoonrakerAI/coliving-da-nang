@@ -5,7 +5,14 @@ import { createPayment, getAllPayments } from '@/lib/db/operations/payment'
 import { PaymentMethod, PaymentStatus } from '@/lib/db/models/payment'
 
 // Mock the database operations
-vi.mock('@/lib/db/operations/payment')
+vi.mock('@/lib/db/operations/payment', () => ({
+  createPayment: vi.fn(),
+  getAllPayments: vi.fn(),
+  getPaymentById: vi.fn(),
+  updatePayment: vi.fn(),
+  deletePayment: vi.fn(),
+  seedSamplePayments: vi.fn()
+}))
 vi.mock('next-auth', () => ({
   getServerSession: vi.fn(() => Promise.resolve({ user: { id: 'test-user' } }))
 }))

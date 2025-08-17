@@ -43,8 +43,10 @@ declare module 'next-auth/jwt' {
 }
 
 // Seed default users and sample payments on startup
-seedDefaultUsers().catch(console.error)
-seedSamplePayments().catch(console.error)
+if (typeof window === 'undefined') {
+  seedDefaultUsers().catch(console.error)
+  seedSamplePayments().catch(console.error)
+}
 
 // NextAuth configuration
 export const authOptions: NextAuthOptions = {

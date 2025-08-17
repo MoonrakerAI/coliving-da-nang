@@ -199,7 +199,7 @@ async function scheduleNextRecurrence(task: Task) {
   if (!task.recurrence || !task.dueDate) return
 
   const { type, interval, daysOfWeek, endDate, assignmentRotation } = task.recurrence
-  let nextDueDate = new Date(task.dueDate)
+  const nextDueDate = new Date(task.dueDate)
 
   switch (type) {
     case 'daily':

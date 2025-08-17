@@ -6,7 +6,8 @@ import { TaskCategory, TaskPriority, TaskStatus } from '@/types'
 
 // Mock dependencies
 vi.mock('next-auth', () => ({
-  getServerSession: vi.fn()
+  default: vi.fn(),
+  getServerSession: vi.fn(() => Promise.resolve({ user: { id: 'test-user' } }))
 }))
 
 vi.mock('@vercel/kv', () => ({
