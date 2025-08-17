@@ -39,7 +39,12 @@ export async function POST(request: NextRequest) {
     }
     
     // Create user invitation
-    const invitedUser = await createUserInvitation(validatedData, session.user.id)
+    const invitedUser = await createUserInvitation({
+      ...validatedData,
+      status: 'Pending' as const,
+      isActive: false,
+      emailVerified: false
+    }, session.user.id)
     
     // Send invitation email
     if (invitedUser.emailVerificationToken) {
