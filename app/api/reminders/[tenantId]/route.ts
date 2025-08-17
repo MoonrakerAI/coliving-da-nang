@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getReminderLogs } from '@/lib/db/operations/reminders'
-import { getSession } from '@/lib/auth'
+import { getSession } from '@/lib/auth-config'
 import { z } from 'zod'
 
 const QuerySchema = z.object({

@@ -150,7 +150,7 @@ export const CreateTenantSchema = TenantSchema.omit({
   createdAt: true,
   updatedAt: true,
   deletedAt: true
-})
+}).strict() // Reject unknown fields including auto-generated ones
 
 export type CreateTenantInput = z.infer<typeof CreateTenantSchema>
 

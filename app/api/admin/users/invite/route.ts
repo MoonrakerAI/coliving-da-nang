@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
-import { authOptions, UserRole } from '@/lib/auth'
+import { authOptions, UserRole } from '@/lib/auth-config'
 import { UserInvitationSchema } from '@/lib/db/models/user'
 import { createUserInvitation, getUserByEmail } from '@/lib/db/operations/user'
 import { sendUserInvitationEmail } from '@/lib/email'

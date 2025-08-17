@@ -54,9 +54,11 @@ export function TaskCard({
   const canComplete = task.status === TaskStatus.PENDING || task.status === TaskStatus.IN_PROGRESS
 
   return (
-    <div className={`bg-white rounded-lg border shadow-sm hover:shadow-md transition-shadow ${
-      isOverdue ? 'border-red-200 bg-red-50' : 'border-gray-200'
-    }`}>
+    <div 
+      data-testid="task-card"
+      className={`bg-white rounded-lg border shadow-sm hover:shadow-md transition-shadow ${
+        isOverdue ? 'border-red-200 bg-red-50' : 'border-gray-200'
+      }`}>
       <div className="p-4">
         {/* Header */}
         <div className="flex items-start justify-between mb-3">

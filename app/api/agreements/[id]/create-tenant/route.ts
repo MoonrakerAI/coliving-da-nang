@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAgreement } from '@/lib/db/operations/agreements'
 import { TenantProfileIntegrationService } from '@/lib/agreements/tenant-integration'
-import { requireAuth } from '@/lib/auth'
+import { requireAuth } from '@/lib/auth-config'
 
 // POST /api/agreements/[id]/create-tenant - Manually create tenant profile from agreement
 export async function POST(

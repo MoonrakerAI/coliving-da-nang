@@ -1,13 +1,15 @@
+import React from 'react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { ExpenseForm } from '@/app/expenses/new/components/ExpenseForm'
 
 // Mock the components that have complex dependencies
 vi.mock('@/app/expenses/new/components/CategorySelector', () => ({
   CategorySelector: ({ selectedCategory, onCategorySelect }: any) => (
     <div data-testid="category-selector">
-      <button onClick={() => onCategorySelect('Utilities')}>Utilities</button>
-      <button onClick={() => onCategorySelect('Repairs')}>Repairs</button>
+      <button type="button" onClick={() => onCategorySelect('Utilities')}>Utilities</button>
+      <button type="button" onClick={() => onCategorySelect('Repairs')}>Repairs</button>
       <span data-testid="selected-category">{selectedCategory}</span>
     </div>
   )
@@ -16,7 +18,7 @@ vi.mock('@/app/expenses/new/components/CategorySelector', () => ({
 vi.mock('@/app/expenses/new/components/PhotoCapture', () => ({
   PhotoCapture: ({ photos, onPhotosChange }: any) => (
     <div data-testid="photo-capture">
-      <button onClick={() => onPhotosChange([new File([''], 'test.jpg')])}>
+      <button type="button" onClick={() => onPhotosChange([new File([''], 'test.jpg')])}>
         Add Photo
       </button>
       <span data-testid="photo-count">{photos.length}</span>
@@ -27,7 +29,7 @@ vi.mock('@/app/expenses/new/components/PhotoCapture', () => ({
 vi.mock('@/app/expenses/new/components/LocationPicker', () => ({
   LocationPicker: ({ onLocationSelect }: any) => (
     <div data-testid="location-picker">
-      <button onClick={() => onLocationSelect({ lat: 16.0544, lng: 108.2022, address: 'Da Nang' })}>
+      <button type="button" onClick={() => onLocationSelect({ lat: 16.0544, lng: 108.2022, address: 'Da Nang' })}>
         Set Location
       </button>
     </div>
@@ -50,25 +52,15 @@ vi.mock('@/components/ui/button', () => ({
 }))
 
 vi.mock('@/components/ui/input', () => ({
-  Input: ({ onChange, value, ...props }: any) => (
-    <input 
-      onChange={onChange} 
-      value={value} 
-      {...props}
-      data-testid="input"
-    />
-  )
+  Input: React.forwardRef<HTMLInputElement, any>(({ ...props }, ref) => (
+    <input ref={ref} {...props} data-testid="input" />
+  )),
 }))
 
 vi.mock('@/components/ui/textarea', () => ({
-  Textarea: ({ onChange, value, ...props }: any) => (
-    <textarea 
-      onChange={onChange} 
-      value={value} 
-      {...props}
-      data-testid="textarea"
-    />
-  )
+  Textarea: React.forwardRef<HTMLTextAreaElement, any>(({ ...props }, ref) => (
+    <textarea ref={ref} {...props} data-testid="textarea" />
+  )),
 }))
 
 vi.mock('@/components/ui/label', () => ({
@@ -78,6 +70,8 @@ vi.mock('@/components/ui/label', () => ({
 }))
 
 describe('ExpenseForm', () => {
+  const user = userEvent.setup()
+
   beforeEach(() => {
     vi.clearAllMocks()
   })
@@ -86,7 +80,7 @@ describe('ExpenseForm', () => {
     render(<ExpenseForm />)
     
     expect(screen.getByLabelText(/amount/i)).toBeInTheDocument()
-    expect(screen.getByLabelText(/category/i)).toBeInTheDocument()
+    expect(screen.getByText(/category \*/i)).toBeInTheDocument()
     expect(screen.getByLabelText(/description/i)).toBeInTheDocument()
     expect(screen.getByTestId('photo-capture')).toBeInTheDocument()
     expect(screen.getByTestId('location-picker')).toBeInTheDocument()
@@ -96,7 +90,7 @@ describe('ExpenseForm', () => {
     render(<ExpenseForm />)
     
     const amountInput = screen.getByLabelText(/amount/i)
-    expect(amountInput).toHaveAttribute('autoFocus')
+    expect(amountInput).toHaveFocus()
   })
 
   it('displays VND currency by default', () => {
@@ -108,10 +102,15 @@ describe('ExpenseForm', () => {
   it('validates required fields', async () => {
     render(<ExpenseForm />)
     
+    // Make form dirty (change category) so submit button enables
+    const repairsButton = screen.getByRole('button', { name: 'Repairs' })
+    await user.click(repairsButton)
+
     const submitButton = screen.getByRole('button', { name: /create expense/i })
+    await waitFor(() => expect(submitButton).toBeEnabled())
     
     // Try to submit without filling required fields
-    fireEvent.click(submitButton)
+    await user.click(submitButton)
     
     await waitFor(() => {
       expect(screen.getByText(/amount must be greater than 0/i)).toBeInTheDocument()

@@ -3,6 +3,14 @@ export * from '../lib/db/models/tenant'
 export * from '../lib/db/models/property'
 export * from '../lib/db/models/payment'
 export * from '../lib/db/models/expense'
+export * from '../lib/db/models/user'
+export * from '../lib/db/models/agreement'
+// Note: Communication types are already exported from tenant model
+export * from '../lib/db/models/expense-category'
+export * from '../lib/db/models/reimbursement'
+export * from '../lib/db/models/reminder'
+export * from '../lib/db/models/room'
+export * from '../lib/db/models/audit-log'
 
 // Legacy User types for compatibility (to be migrated)
 export interface User {

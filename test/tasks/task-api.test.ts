@@ -260,7 +260,8 @@ describe('Tasks API', () => {
         'task:prop123:task123',
         expect.objectContaining({
           ...mockTask,
-          deletedAt: expect.any(Date)
+          deletedAt: expect.any(Date),
+          updatedAt: expect.any(Date)
         })
       )
     })

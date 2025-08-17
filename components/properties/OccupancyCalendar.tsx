@@ -178,7 +178,7 @@ export function OccupancyCalendar({ roomId, occupancyHistory, onUpdate }: Occupa
             
             if (currentOccupancy) {
               return (
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between" data-testid="occupancy-current">
                   <div className="flex items-center gap-2">
                     <Users className="h-4 w-4 text-blue-600" />
                     <span className="text-sm text-gray-600">
@@ -192,7 +192,7 @@ export function OccupancyCalendar({ roomId, occupancyHistory, onUpdate }: Occupa
               )
             } else {
               return (
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between" data-testid="occupancy-past">
                   <div className="flex items-center gap-2">
                     <Calendar className="h-4 w-4 text-green-600" />
                     <span className="text-sm text-gray-600">

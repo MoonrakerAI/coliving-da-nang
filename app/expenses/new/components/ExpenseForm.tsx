@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -43,12 +42,17 @@ export function ExpenseForm() {
     register,
     handleSubmit,
     setValue,
+    setError,
     watch,
     formState: { errors, isDirty },
   } = useForm<ExpenseFormData>({
-    resolver: zodResolver(expenseFormSchema),
+    mode: 'onSubmit',
+    reValidateMode: 'onSubmit',
     defaultValues: {
+      amount: 0,
       currency: 'VND',
+      category: 'Utilities',
+      description: '',
       date: new Date(),
       isReimbursement: false,
       reimbursementReason: '',
@@ -72,6 +76,17 @@ export function ExpenseForm() {
   }
 
   const onSubmit = async (data: ExpenseFormData) => {
+    // Manual validation with Zod to avoid unhandled promise rejections from resolver in tests
+    const result = expenseFormSchema.safeParse(data)
+    if (!result.success) {
+      result.error.issues.forEach((issue) => {
+        const field = issue.path[0] as keyof ExpenseFormData | undefined
+        if (field) {
+          setError(field as any, { type: 'manual', message: issue.message })
+        }
+      })
+      return
+    }
     setIsSubmitting(true)
     try {
       // Create expense with reimbursement flag

@@ -4,7 +4,7 @@ import {
   createReminderSettings,
   updateReminderSettings
 } from '@/lib/db/operations/reminders'
-import { getSession } from '@/lib/auth'
+import { getSession } from '@/lib/auth-config'
 import { z } from 'zod'
 
 const ReminderSettingsSchema = z.object({

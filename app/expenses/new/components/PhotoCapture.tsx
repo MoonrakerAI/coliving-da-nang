@@ -47,7 +47,7 @@ export function PhotoCapture({ photos, onPhotosChange }: PhotoCaptureProps) {
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3" data-testid="photo-capture">
       {/* Photo Preview Grid */}
       {photos.length > 0 && (
         <div className="grid grid-cols-2 gap-2">

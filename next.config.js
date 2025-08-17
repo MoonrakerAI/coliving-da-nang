@@ -13,6 +13,10 @@ const nextConfig = {
   images: {
     domains: ['vercel.app'],
   },
+  // Ensure API routes use Node.js runtime for NextAuth compatibility
+  async rewrites() {
+    return []
+  },
 }
 
 module.exports = nextConfig

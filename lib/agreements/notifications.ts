@@ -33,6 +33,17 @@ export interface ReminderEmailData extends AgreementEmailData {
   daysUntilExpiration: number
 }
 
+// Agreement notification service class
+export class AgreementNotificationService {
+  static async sendAgreementEmail(data: AgreementEmailData): Promise<void> {
+    return sendAgreementEmail(data)
+  }
+
+  static async sendReminderEmail(data: ReminderEmailData): Promise<void> {
+    return sendAgreementReminderEmail(data)
+  }
+}
+
 // Send initial agreement email to prospect
 export async function sendAgreementEmail(data: AgreementEmailData): Promise<void> {
   const subject = `Digital Lease Agreement - ${data.propertyName}`

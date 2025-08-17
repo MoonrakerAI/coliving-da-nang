@@ -210,6 +210,38 @@ export async function sendUserInvitationEmail(
   }
 }
 
+// Generic email sending function
+export async function sendEmail(options: {
+  to: string
+  subject: string
+  text?: string
+  html?: string
+}): Promise<void> {
+  if (isDevelopment && !isSmtpConfigured) {
+    console.log('=== EMAIL ===')
+    console.log(`To: ${options.to}`)
+    console.log(`Subject: ${options.subject}`)
+    console.log(`Text: ${options.text}`)
+    console.log('=============')
+    return
+  }
+
+  try {
+    await transporter.sendMail({
+      from: process.env.SMTP_FROM || 'noreply@coliving-danang.com',
+      to: options.to,
+      subject: options.subject,
+      text: options.text,
+      html: options.html,
+    })
+    
+    console.log(`Email sent to: ${options.to}`)
+  } catch (error) {
+    console.error('Failed to send email:', error)
+    throw new Error('Failed to send email')
+  }
+}
+
 // Test email configuration
 export async function testEmailConfiguration(): Promise<boolean> {
   if (isDevelopment && !isSmtpConfigured) {

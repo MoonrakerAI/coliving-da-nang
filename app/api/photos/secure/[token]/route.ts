@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { validateSecurePhotoToken, logPhotoAccess } from '@/lib/storage/access-control';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { authOptions } from '@/lib/auth-config';
 
 export async function GET(
   request: NextRequest,

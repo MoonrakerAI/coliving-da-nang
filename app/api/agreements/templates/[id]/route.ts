@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { authOptions } from '@/lib/auth-config'
 import { AgreementTemplateService } from '@/lib/agreements/templates'
 import { UpdateAgreementTemplateSchema } from '@/lib/db/models/agreement'
 import { z } from 'zod'

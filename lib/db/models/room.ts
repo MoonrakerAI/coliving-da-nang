@@ -35,7 +35,7 @@ export const CreateRoomSchema = RoomSchema.omit({
   createdAt: true,
   updatedAt: true,
   deletedAt: true
-})
+}).strict() // Reject unknown fields including auto-generated ones
 
 export type CreateRoomInput = z.infer<typeof CreateRoomSchema>
 

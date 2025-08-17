@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { authOptions } from '@/lib/auth-config';
 import { kv } from '@vercel/kv';
 import { z } from 'zod';
 import { createAuditLog } from '@/lib/admin/audit';

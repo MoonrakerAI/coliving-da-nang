@@ -5,12 +5,12 @@ import {
   getPropertyTenants 
 } from '@/lib/db/operations/tenants'
 import { CreateTenantSchema } from '@/lib/db/models/tenant'
-import { auth } from '@/lib/auth'
+import { getSession } from '@/lib/auth-config'
 
 // GET /api/tenants - List tenants with optional filtering
 export async function GET(request: NextRequest) {
   try {
-    const session = await auth()
+    const session = await getSession()
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
 // POST /api/tenants - Create new tenant
 export async function POST(request: NextRequest) {
   try {
-    const session = await auth()
+    const session = await getSession()
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
