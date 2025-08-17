@@ -136,16 +136,16 @@ export default function AgreementDocumentsPage() {
     }
   }
 
-  const downloadDocument = async (document: DocumentWithUrls) => {
+  const downloadDocument = async (doc: DocumentWithUrls) => {
     try {
-      const response = await fetch(document.downloadUrl)
+      const response = await fetch(doc.downloadUrl)
       
       if (response.ok) {
         const blob = await response.blob()
         const url = window.URL.createObjectURL(blob)
         const a = document.createElement('a')
         a.href = url
-        a.download = document.fileName
+        a.download = doc.fileName
         document.body.appendChild(a)
         a.click()
         window.URL.revokeObjectURL(url)
