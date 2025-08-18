@@ -1,3 +1,19 @@
+import 'next-auth';
+
+declare module 'next-auth' {
+  interface Session {
+    user: {
+      id: string;
+      role: UserRole;
+    } & DefaultSession['user'];
+  }
+
+  interface User {
+    id: string;
+    role: UserRole;
+  }
+}
+
 // Re-export all types from database models for consistency
 export * from '../lib/db/models/tenant'
 export * from '../lib/db/models/property'
