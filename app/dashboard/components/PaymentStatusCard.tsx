@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useSwipeable } from 'react-swipeable'
 import { Payment, PaymentStatus } from '@/lib/db/models/payment'
 import { Tenant } from '@/lib/db/models/tenant'
 import { formatCurrency, formatDate } from '@/lib/utils'
@@ -9,7 +10,8 @@ interface PaymentStatusCardProps {
   payment: Payment
   tenant: Tenant
   onStatusUpdate: (paymentId: string, status: keyof typeof PaymentStatus) => void
-  onSendReminder: (paymentId: string) => void
+    onSendReminder: (paymentId: string) => void
+  onToggleReminders: (paymentId: string, remindersPaused: boolean) => void
   onViewDetails: (paymentId: string) => void
 }
 
@@ -17,10 +19,12 @@ export function PaymentStatusCard({
   payment, 
   tenant, 
   onStatusUpdate, 
-  onSendReminder,
+    onSendReminder,
+  onToggleReminders,
   onViewDetails 
 }: PaymentStatusCardProps) {
   const [isUpdating, setIsUpdating] = useState(false)
+  const [swipeState, setSwipeState] = useState({ x: 0, dir: '' })
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -48,6 +52,33 @@ export function PaymentStatusCard({
     }
   }
 
+  const handlers = useSwipeable({
+    onSwipedLeft: () => {
+      if (payment.status === PaymentStatus.PENDING || payment.status === PaymentStatus.OVERDUE) {
+        onSendReminder(payment.id)
+      }
+      resetSwipeState()
+    },
+    onSwipedRight: () => {
+      if (payment.status !== PaymentStatus.PAID) {
+        handleStatusUpdate('PAID')
+      }
+      resetSwipeState()
+    },
+    onSwiping: (event) => {
+      setSwipeState({ x: event.deltaX, dir: event.dir })
+    },
+    onSwiped: () => {
+      resetSwipeState()
+    },
+    trackMouse: true,
+    preventScrollOnSwipe: true
+  })
+
+  const resetSwipeState = () => {
+    setSwipeState({ x: 0, dir: '' })
+  }
+
   const handleStatusUpdate = async (newStatus: keyof typeof PaymentStatus) => {
     setIsUpdating(true)
     try {
@@ -60,8 +91,27 @@ export function PaymentStatusCard({
   const isOverdue = new Date(payment.dueDate) < new Date() && payment.status !== PaymentStatus.PAID
   const daysUntilDue = Math.ceil((new Date(payment.dueDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
 
+  const swipeStyle = {
+    transform: `translateX(${swipeState.x}px)`,
+    transition: swipeState.x === 0 ? 'transform 0.3s ease' : 'none',
+  }
+
+  const rightActionActive = swipeState.dir === 'Right' && swipeState.x > 50;
+  const leftActionActive = swipeState.dir === 'Left' && swipeState.x < -50;
+
   return (
-    <div className="bg-white rounded-lg border shadow-sm p-6 hover:shadow-md transition-shadow">
+    <div className="relative bg-gray-100 rounded-lg overflow-hidden">
+      {/* Background actions */}
+      <div
+        className={`absolute inset-0 flex items-center justify-start px-6 bg-green-500 text-white font-bold transition-opacity ${rightActionActive ? 'opacity-100' : 'opacity-0'}`}>
+        Mark as Paid
+      </div>
+      <div
+        className={`absolute inset-0 flex items-center justify-end px-6 bg-indigo-500 text-white font-bold transition-opacity ${leftActionActive ? 'opacity-100' : 'opacity-0'}`}>
+        Send Reminder
+      </div>
+
+      <div {...handlers} style={swipeStyle} className="relative bg-white rounded-lg border shadow-sm p-6 hover:shadow-md transition-shadow z-10">
       {/* Header */}
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center space-x-3">
@@ -151,14 +201,23 @@ export function PaymentStatusCard({
           </button>
         )}
         
-        {(payment.status === PaymentStatus.PENDING || payment.status === PaymentStatus.OVERDUE) && (
-          <button
-            onClick={() => onSendReminder(payment.id)}
-            className="px-3 py-2 text-sm font-medium text-indigo-700 bg-indigo-100 border border-transparent rounded-md hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-          >
-            Send Reminder
-          </button>
+                {(payment.status === PaymentStatus.PENDING || payment.status === PaymentStatus.OVERDUE) && (
+          <>
+            <button
+              onClick={() => onSendReminder(payment.id)}
+              className="px-3 py-2 text-sm font-medium text-indigo-700 bg-indigo-100 border border-transparent rounded-md hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            >
+              Send Reminder
+            </button>
+            <button
+              onClick={() => onToggleReminders(payment.id, !payment.remindersPaused)}
+              className="px-3 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-transparent rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+            >
+              {payment.remindersPaused ? 'Resume' : 'Pause'} Reminders
+            </button>
+          </>
         )}
+                  )}
       </div>
 
       {payment.notes && (
@@ -168,6 +227,7 @@ export function PaymentStatusCard({
           </p>
         </div>
       )}
+          </div>
     </div>
   )
 }

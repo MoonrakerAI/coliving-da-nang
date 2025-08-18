@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { CategorySelector } from '@/app/expenses/new/components/CategorySelector'
 
@@ -33,12 +33,16 @@ describe('CategorySelector', () => {
     render(<CategorySelector onCategorySelect={mockOnCategorySelect} />)
     
     // Check all categories are present
-    expect(screen.getByText('Utilities')).toBeInTheDocument()
-    expect(screen.getByText('Repairs')).toBeInTheDocument()
-    expect(screen.getByText('Supplies')).toBeInTheDocument()
-    expect(screen.getByText('Cleaning')).toBeInTheDocument()
-    expect(screen.getByText('Maintenance')).toBeInTheDocument()
-    expect(screen.getByText('Other')).toBeInTheDocument()
+    const allCategoriesSection = screen.getByText('All Categories').parentElement
+    expect(allCategoriesSection).toBeInTheDocument()
+
+    const allCategories = within(allCategoriesSection!)
+    expect(allCategories.getByText('Utilities')).toBeInTheDocument()
+    expect(allCategories.getByText('Repairs')).toBeInTheDocument()
+    expect(allCategories.getByText('Supplies')).toBeInTheDocument()
+    expect(allCategories.getByText('Cleaning')).toBeInTheDocument()
+    expect(allCategories.getByText('Maintenance')).toBeInTheDocument()
+    expect(allCategories.getByText('Other')).toBeInTheDocument()
   })
 
   it('displays category icons', () => {
@@ -64,7 +68,8 @@ describe('CategorySelector', () => {
   it('calls onCategorySelect when category is clicked', async () => {
     render(<CategorySelector onCategorySelect={mockOnCategorySelect} />)
     
-    const utilitiesButton = screen.getAllByText('Utilities')[0] // Get first occurrence
+    const allCategoriesSection = screen.getByText('All Categories').parentElement!
+    const utilitiesButton = within(allCategoriesSection).getByText('Utilities')
     await user.click(utilitiesButton)
     
     expect(mockOnCategorySelect).toHaveBeenCalledWith('Utilities')
@@ -122,7 +127,8 @@ describe('CategorySelector', () => {
     )
     
     // Click on Cleaning category
-    const cleaningButton = screen.getAllByText('Cleaning')[0]
+    const allCategoriesSection = screen.getByText('All Categories').parentElement!
+    const cleaningButton = within(allCategoriesSection).getByText('Cleaning')
     await user.click(cleaningButton)
     
     expect(mockOnCategorySelect).toHaveBeenCalledWith('Cleaning')

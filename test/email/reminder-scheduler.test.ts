@@ -167,12 +167,13 @@ describe('Reminder Scheduler', () => {
   })
 
   describe('sendManualReminder', () => {
+    const { getPaymentById } = vi.mocked(require('@/lib/db/operations/payments'))
+    const { getTenantById } = vi.mocked(require('@/lib/db/operations/tenants'))
+    const { getPropertyById } = vi.mocked(require('@/lib/db/operations/properties'))
+    const { sendPaymentReminder, checkRateLimit } = vi.mocked(require('@/lib/email/reminder-sender'))
+    const { createReminderLog } = vi.mocked(require('@/lib/db/operations/reminders'))
+
     it('should send manual reminder successfully', async () => {
-      const { getPaymentById } = await import('@/lib/db/operations/payments')
-      const { getTenantById } = await import('@/lib/db/operations/tenants')
-      const { getPropertyById } = await import('@/lib/db/operations/properties')
-      const { sendPaymentReminder, checkRateLimit } = await import('@/lib/email/reminder-sender')
-      const { createReminderLog } = await import('@/lib/db/operations/reminders')
 
       const mockPayment = {
         id: 'payment-1',
@@ -213,9 +214,7 @@ describe('Reminder Scheduler', () => {
     })
 
     it('should handle payment not found', async () => {
-      const { getPaymentById } = await import('@/lib/db/operations/payments')
-
-      vi.mocked(getPaymentById).mockResolvedValue(null)
+      getPaymentById.mockResolvedValue(null)
 
       const result = await sendManualReminder('nonexistent-payment', 'due')
 
@@ -224,13 +223,7 @@ describe('Reminder Scheduler', () => {
     })
 
     it('should handle email sending failure', async () => {
-      const { getPaymentById } = await import('@/lib/db/operations/payments')
-      const { getTenantById } = await import('@/lib/db/operations/tenants')
-      const { getPropertyById } = await import('@/lib/db/operations/properties')
-      const { sendPaymentReminder, checkRateLimit } = await import('@/lib/email/reminder-sender')
-      const { createReminderLog } = await import('@/lib/db/operations/reminders')
-
-      vi.mocked(getPaymentById).mockResolvedValue({
+      getPaymentById.mockResolvedValue({
         id: 'payment-1',
         tenantId: 'tenant-1',
         propertyId: 'property-1'

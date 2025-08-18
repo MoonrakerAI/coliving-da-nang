@@ -1,14 +1,14 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import {
   TenantSchema,
   CreateTenantSchema,
   UpdateTenantSchema,
   EmergencyContactSchema,
   TenantDocumentSchema,
-  CommunicationSchema,
   RoomAssignmentSchema,
   LeaseRecordSchema
 } from '@/lib/db/models/tenant'
+
 
 describe('Tenant Data Models', () => {
   describe('EmergencyContactSchema', () => {
@@ -139,55 +139,6 @@ describe('Tenant Data Models', () => {
     })
   })
 
-  describe('CommunicationSchema', () => {
-    it('should validate a complete communication record', () => {
-      const validCommunication = {
-        id: '123e4567-e89b-12d3-a456-426614174000',
-        type: 'Email' as const,
-        subject: 'Lease Renewal',
-        content: 'Discussion about lease renewal options',
-        timestamp: new Date(),
-        issueTags: ['lease', 'renewal'],
-        resolved: false,
-        createdBy: 'admin@example.com'
-      }
-
-      const result = CommunicationSchema.safeParse(validCommunication)
-      expect(result.success).toBe(true)
-    })
-
-    it('should validate communication types', () => {
-      const validTypes = ['Email', 'Phone', 'In Person', 'SMS', 'Note']
-      
-      validTypes.forEach(type => {
-        const communication = {
-          id: '123e4567-e89b-12d3-a456-426614174000',
-          type,
-          content: 'Test communication',
-          timestamp: new Date(),
-          issueTags: [],
-          resolved: false,
-          createdBy: 'test@example.com'
-        }
-
-        const result = CommunicationSchema.safeParse(communication)
-        expect(result.success).toBe(true)
-      })
-    })
-
-    it('should require content and createdBy', () => {
-      const invalidCommunication = {
-        id: '123e4567-e89b-12d3-a456-426614174000',
-        type: 'Email',
-        timestamp: new Date(),
-        issueTags: [],
-        resolved: false
-      }
-
-      const result = CommunicationSchema.safeParse(invalidCommunication)
-      expect(result.success).toBe(false)
-    })
-  })
 
   describe('TenantSchema', () => {
     it('should validate a complete enhanced tenant', () => {
@@ -219,7 +170,7 @@ describe('Tenant Data Models', () => {
           updatedAt: new Date()
         }],
         documents: [],
-        communicationHistory: [],
+        communicationHistory: ['123e4567-e89b-12d3-a456-426614174005'],
         leaseHistory: [],
         createdAt: new Date(),
         updatedAt: new Date()
@@ -255,7 +206,7 @@ describe('Tenant Data Models', () => {
         },
         emergencyContacts: [],
         documents: [],
-        communicationHistory: [],
+        communicationHistory: ['123e4567-e89b-12d3-a456-426614174005'],
         leaseHistory: [],
         createdAt: new Date(),
         updatedAt: new Date()

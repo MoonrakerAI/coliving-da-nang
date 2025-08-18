@@ -20,16 +20,6 @@ export const DocumentType = {
 
 export type DocumentTypeType = typeof DocumentType[keyof typeof DocumentType]
 
-// Communication type enum
-export const CommunicationType = {
-  EMAIL: 'Email',
-  PHONE: 'Phone',
-  IN_PERSON: 'In Person',
-  SMS: 'SMS',
-  NOTE: 'Note'
-} as const
-
-export type CommunicationTypeType = typeof CommunicationType[keyof typeof CommunicationType]
 
 // Enhanced emergency contact schema with multiple contacts support
 export const EmergencyContactSchema = z.object({
@@ -72,19 +62,6 @@ export const TenantDocumentSchema = z.object({
 
 export type TenantDocument = z.infer<typeof TenantDocumentSchema>
 
-// Communication history schema
-export const CommunicationSchema = z.object({
-  id: z.string().uuid('Invalid communication ID format'),
-  type: z.enum(['Email', 'Phone', 'In Person', 'SMS', 'Note']),
-  subject: z.string().optional(),
-  content: z.string().min(1, 'Communication content is required'),
-  timestamp: z.date(),
-  issueTags: z.array(z.string()).default([]),
-  resolved: z.boolean().default(false),
-  createdBy: z.string().min(1, 'Created by is required')
-})
-
-export type Communication = z.infer<typeof CommunicationSchema>
 
 // Lease record schema
 export const LeaseRecordSchema = z.object({
@@ -121,8 +98,8 @@ export const TenantSchema = z.object({
   // Document storage
   documents: z.array(TenantDocumentSchema).default([]),
   
-  // Communication history
-  communicationHistory: z.array(CommunicationSchema).default([]),
+  // Communication history (IDs)
+  communicationHistory: z.array(z.string().uuid()).default([]),
   
   // Lease history and management
   leaseHistory: z.array(LeaseRecordSchema).default([]),

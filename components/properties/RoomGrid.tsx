@@ -154,7 +154,7 @@ export function RoomGrid({ rooms, propertyId, onUpdate }: RoomGridProps) {
       {/* Rooms Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {rooms.map((room) => (
-          <Card key={room.id} className="hover:shadow-lg transition-shadow duration-200">
+          <Card key={room.id} role="article" className="hover:shadow-lg transition-shadow duration-200">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center gap-2 text-lg">

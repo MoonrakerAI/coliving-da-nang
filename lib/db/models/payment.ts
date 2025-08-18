@@ -38,6 +38,7 @@ export const PaymentSchema = z.object({
   notes: z.string().optional(),
   description: z.string().min(1, 'Payment description is required'),
   stripePaymentIntentId: z.string().optional(),
+  remindersPaused: z.boolean().default(false).optional(),
   createdAt: z.date(),
   updatedAt: z.date(),
   deletedAt: z.date().optional() // For soft deletes
@@ -63,6 +64,7 @@ export const UpdatePaymentSchema = PaymentSchema.omit({
 }).partial()
 
 export type UpdatePayment = z.infer<typeof UpdatePaymentSchema>
+export type UpdatePaymentInput = z.infer<typeof UpdatePaymentSchema> & { id: string; }
 export type CreatePayment = z.infer<typeof CreatePaymentSchema>
 
 // Payment query filters

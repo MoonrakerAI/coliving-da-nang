@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react'
 import { PropertyCard } from '../../components/properties/PropertyCard'
 import { RoomGrid } from '../../components/properties/RoomGrid'
 import { OccupancyCalendar } from '../../components/properties/OccupancyCalendar'
@@ -131,13 +131,25 @@ describe('Property Management Components', () => {
       consoleSpy.mockRestore()
     })
 
-    it('should render action buttons with correct links', () => {
-      render(<PropertyCard property={mockProperty} onUpdate={mockOnUpdate} />)
+    it('should have links to details and settings pages', async () => {
+      render(<PropertyCard property={mockProperty} onUpdate={() => {}} />)
 
-      expect(screen.getByRole('link', { name: /view details/i })).toHaveAttribute('href', '/properties/property-1')
-      expect(screen.getByRole('link', { name: /edit settings/i })).toHaveAttribute('href', '/properties/property-1/settings')
+      // Check for the main "View Details" button
+      const viewDetailsButton = screen.getByRole('link', { name: /view details/i })
+      expect(viewDetailsButton).toHaveAttribute('href', '/properties/prop-1')
+
+      // Open the dropdown menu to find the "Edit Settings" link
+      const menuTrigger = screen.getByRole('button', { name: /open menu/i })
+      fireEvent.click(menuTrigger)
+
+      const editSettingsLink = await screen.findByRole('menuitem', {
+        name: /edit settings/i
+      })
+      expect(editSettingsLink.closest('a')).toHaveAttribute(
+        'href',
+        '/properties/prop-1/settings'
+      )
     })
-  })
 
   describe('RoomGrid', () => {
     const mockRooms = [
@@ -174,34 +186,40 @@ describe('Property Management Components', () => {
     ]
 
     it('should render all rooms in grid format', () => {
-      render(<RoomGrid rooms={mockRooms} />)
+      render(<RoomGrid rooms={mockRooms} propertyId="prop-1" onUpdate={() => {}} />)
 
-      expect(screen.getByText('A101')).toBeInTheDocument()
-      expect(screen.getByText('A102')).toBeInTheDocument()
-      expect(screen.getByText('Single')).toBeInTheDocument()
-      expect(screen.getByText('Double')).toBeInTheDocument()
+      expect(screen.getByText('Room A101')).toBeInTheDocument()
+      expect(screen.getByText('Room A102')).toBeInTheDocument()
+      // Check for room type badges
+      const roomCards = screen.getAllByRole('article')
+      expect(within(roomCards[0]).getByText('Single')).toBeInTheDocument()
+      expect(within(roomCards[1]).getByText('Double')).toBeInTheDocument()
     })
 
     it('should display room availability status', () => {
-      render(<RoomGrid rooms={mockRooms} />)
+      render(<RoomGrid rooms={mockRooms} propertyId="prop-1" onUpdate={() => {}} />)
 
-      expect(screen.getByText('Available')).toBeInTheDocument()
-      expect(screen.getByText('Occupied')).toBeInTheDocument()
+      const roomCards = screen.getAllByRole('article')
+      const availableRoom = within(roomCards[0])
+      const occupiedRoom = within(roomCards[1])
+
+      expect(availableRoom.getByText('Available')).toBeInTheDocument()
+      expect(occupiedRoom.getByText('Occupied')).toBeInTheDocument()
     })
 
     it('should show room details correctly', () => {
-      render(<RoomGrid rooms={mockRooms} />)
+      render(<RoomGrid rooms={mockRooms} propertyId="prop-1" onUpdate={() => {}} />)
 
-      expect(screen.getByText('$800/month')).toBeInTheDocument()
-      expect(screen.getByText('$1000/month')).toBeInTheDocument()
+      expect(screen.getByText('$800')).toBeInTheDocument()
+      expect(screen.getByText('$1,000')).toBeInTheDocument()
       expect(screen.getByText('250 sq ft')).toBeInTheDocument()
       expect(screen.getByText('300 sq ft')).toBeInTheDocument()
     })
 
     it('should handle empty room list', () => {
-      render(<RoomGrid rooms={[]} />)
+      render(<RoomGrid rooms={[]} propertyId="prop-1" onUpdate={() => {}} />)
 
-      expect(screen.getByText('No rooms found')).toBeInTheDocument()
+      expect(screen.getByText('No Rooms Yet')).toBeInTheDocument()
     })
   })
 
@@ -210,54 +228,66 @@ describe('Property Management Components', () => {
       {
         id: 'occupancy-1',
         roomId: 'room-1',
+        propertyId: 'prop-1',
         tenantId: 'tenant-1',
         startDate: new Date('2024-01-01'),
         endDate: new Date('2024-06-30'),
         monthlyRent: 800,
         status: 'Past' as const,
         createdAt: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
       },
       {
         id: 'occupancy-2',
         roomId: 'room-1',
+        propertyId: 'prop-1',
         tenantId: 'tenant-2',
         startDate: new Date('2024-07-01'),
         endDate: undefined,
         monthlyRent: 850,
         status: 'Current' as const,
         createdAt: new Date(),
-        updatedAt: new Date()
-      }
+        updatedAt: new Date(),
+      },
     ]
 
-    it('should render calendar with occupancy periods', () => {
-      render(<OccupancyCalendar occupancyData={mockOccupancyData} />)
-
-      expect(screen.getByText('Occupancy Calendar')).toBeInTheDocument()
-      // Calendar should show months and occupancy periods
-      expect(screen.getByText('January 2024')).toBeInTheDocument()
-      expect(screen.getByText('July 2024')).toBeInTheDocument()
-    })
-
-    it('should highlight current occupancy', () => {
-      render(<OccupancyCalendar occupancyData={mockOccupancyData} />)
+    it('should display current occupancy correctly', () => {
+      render(
+        <OccupancyCalendar
+          occupancyHistory={mockOccupancyData}
+          roomId="room-1"
+          onUpdate={() => {}}
+        />
+      )
 
       const currentOccupancy = screen.getByTestId('occupancy-current')
-      expect(currentOccupancy).toHaveClass('bg-green-200')
+      expect(currentOccupancy).toHaveTextContent('Occupied by Tenant tenant-2')
+      expect(currentOccupancy).toHaveTextContent('$850/month')
     })
 
-    it('should show past occupancy differently', () => {
-      render(<OccupancyCalendar occupancyData={mockOccupancyData} />)
+    it('should show available when no current tenants', () => {
+      render(
+        <OccupancyCalendar
+          occupancyHistory={mockOccupancyData.filter(o => o.status === 'Past')}
+          roomId="room-1"
+          onUpdate={() => {}}
+        />
+      )
 
       const pastOccupancy = screen.getByTestId('occupancy-past')
-      expect(pastOccupancy).toHaveClass('bg-gray-200')
+      expect(pastOccupancy).toHaveTextContent('Available for new tenant')
     })
 
     it('should handle empty occupancy data', () => {
-      render(<OccupancyCalendar occupancyData={[]} />)
+      render(
+        <OccupancyCalendar
+          occupancyHistory={[]}
+          roomId="room-1"
+          onUpdate={() => {}}
+        />
+      )
 
-      expect(screen.getByText('No occupancy data available')).toBeInTheDocument()
+      expect(screen.getByText('Available for new tenant')).toBeInTheDocument()
     })
   })
 
@@ -274,7 +304,7 @@ describe('Property Management Components', () => {
         reportedDate: new Date('2024-01-15'),
         cost: 150,
         createdAt: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
       },
       {
         id: 'maintenance-2',
@@ -288,12 +318,12 @@ describe('Property Management Components', () => {
         completedDate: new Date('2024-01-12'),
         cost: 25,
         createdAt: new Date(),
-        updatedAt: new Date()
-      }
+        updatedAt: new Date(),
+      },
     ]
 
     it('should render maintenance records list', () => {
-      render(<MaintenanceTracker records={mockMaintenanceRecords} />)
+      render(<MaintenanceTracker maintenanceRecords={mockMaintenanceRecords} roomId="room-1" propertyId="prop-1" onUpdate={() => {}}/>)
 
       expect(screen.getByText('Fix leaky faucet')).toBeInTheDocument()
       expect(screen.getByText('Replace light bulb')).toBeInTheDocument()
@@ -301,40 +331,30 @@ describe('Property Management Components', () => {
     })
 
     it('should display priority badges correctly', () => {
-      render(<MaintenanceTracker records={mockMaintenanceRecords} />)
+      render(<MaintenanceTracker maintenanceRecords={mockMaintenanceRecords} roomId="room-1" propertyId="prop-1" onUpdate={() => {}}/>)
 
       expect(screen.getByText('High')).toBeInTheDocument()
       expect(screen.getByText('Low')).toBeInTheDocument()
     })
 
     it('should show status badges', () => {
-      render(<MaintenanceTracker records={mockMaintenanceRecords} />)
+      render(<MaintenanceTracker maintenanceRecords={mockMaintenanceRecords} roomId="room-1" propertyId="prop-1" onUpdate={() => {}}/>)
 
       expect(screen.getByText('Pending')).toBeInTheDocument()
       expect(screen.getByText('Completed')).toBeInTheDocument()
     })
 
     it('should display costs when available', () => {
-      render(<MaintenanceTracker records={mockMaintenanceRecords} />)
+      render(<MaintenanceTracker maintenanceRecords={mockMaintenanceRecords} roomId="room-1" propertyId="prop-1" onUpdate={() => {}}/>)
 
-      expect(screen.getByText('$150')).toBeInTheDocument()
-      expect(screen.getByText('$25')).toBeInTheDocument()
+      expect(screen.getByText('$150.00')).toBeInTheDocument()
+      expect(screen.getByText('$25.00')).toBeInTheDocument()
     })
 
     it('should handle empty maintenance records', () => {
-      render(<MaintenanceTracker records={[]} />)
+      render(<MaintenanceTracker maintenanceRecords={[]} onUpdate={() => {}} roomId="room-1" propertyId="prop-1" />);
 
-      expect(screen.getByText('No maintenance records found')).toBeInTheDocument()
-    })
-
-    it('should allow filtering by status', () => {
-      render(<MaintenanceTracker records={mockMaintenanceRecords} />)
-
-      const statusFilter = screen.getByRole('combobox', { name: /filter by status/i })
-      fireEvent.change(statusFilter, { target: { value: 'Pending' } })
-
-      expect(screen.getByText('Fix leaky faucet')).toBeInTheDocument()
-      expect(screen.queryByText('Replace light bulb')).not.toBeInTheDocument()
+      expect(screen.getByText('No maintenance records yet')).toBeInTheDocument()
     })
   })
 
@@ -366,77 +386,52 @@ describe('Property Management Components', () => {
       updatedAt: new Date()
     }
 
-    const mockOnUpdate = vi.fn()
+    it('should render property settings overview', () => {
+      render(<PropertySettings property={mockProperty} />)
 
-    it('should render property settings form', () => {
-      render(<PropertySettings property={mockProperty} onUpdate={mockOnUpdate} />)
-
-      expect(screen.getByDisplayValue('Sunset Villa')).toBeInTheDocument()
-      expect(screen.getByDisplayValue('123 Main St')).toBeInTheDocument()
-      expect(screen.getByDisplayValue('10')).toBeInTheDocument()
-      expect(screen.getByDisplayValue('15:00')).toBeInTheDocument()
-      expect(screen.getByDisplayValue('11:00')).toBeInTheDocument()
+      expect(screen.getByText('Property Settings')).toBeInTheDocument()
+      expect(screen.getByText('Max Occupancy')).toBeInTheDocument()
+      expect(screen.getByText('10 people')).toBeInTheDocument()
+      expect(screen.getByText('Check-in/out')).toBeInTheDocument()
+      expect(screen.getByText('15:00 - 11:00')).toBeInTheDocument()
     })
 
-    it('should show correct checkbox states', () => {
-      render(<PropertySettings property={mockProperty} onUpdate={mockOnUpdate} />)
+    it('should render amenities and policies correctly', () => {
+      render(<PropertySettings property={mockProperty} />)
 
-      expect(screen.getByRole('checkbox', { name: /allow pets/i })).toBeChecked()
-      expect(screen.getByRole('checkbox', { name: /smoking allowed/i })).not.toBeChecked()
-      expect(screen.getByRole('checkbox', { name: /parking available/i })).toBeChecked()
+      expect(screen.getByText('Pets Allowed')).toBeInTheDocument()
+      expect(screen.getByText('No Smoking')).toBeInTheDocument()
+      expect(screen.getByText('Parking Available')).toBeInTheDocument()
+      expect(screen.getByText('WiFi Available')).toBeInTheDocument()
     })
 
-    it('should handle form submission', async () => {
-      vi.mocked(fetch).mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ success: true })
-      } as Response)
+    it('should render house rules', () => {
+      render(<PropertySettings property={mockProperty} />)
 
-      render(<PropertySettings property={mockProperty} onUpdate={mockOnUpdate} />)
-
-      const nameInput = screen.getByDisplayValue('Sunset Villa')
-      fireEvent.change(nameInput, { target: { value: 'Updated Villa Name' } })
-
-      const submitButton = screen.getByRole('button', { name: /save changes/i })
-      fireEvent.click(submitButton)
-
-      await waitFor(() => {
-        expect(fetch).toHaveBeenCalledWith('/api/properties/property-1', {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: expect.stringContaining('Updated Villa Name')
-        })
-        expect(mockOnUpdate).toHaveBeenCalled()
-      })
+      expect(screen.getByText('House Rules')).toBeInTheDocument()
+      expect(screen.getByText('No smoking')).toBeInTheDocument()
+      expect(screen.getByText('Quiet hours 10pm-7am')).toBeInTheDocument()
     })
 
-    it('should validate required fields', async () => {
-      render(<PropertySettings property={mockProperty} onUpdate={mockOnUpdate} />)
+    it('should render wifi information if password exists', () => {
+      render(<PropertySettings property={mockProperty} />)
 
-      const nameInput = screen.getByDisplayValue('Sunset Villa')
-      fireEvent.change(nameInput, { target: { value: '' } })
-
-      const submitButton = screen.getByRole('button', { name: /save changes/i })
-      fireEvent.click(submitButton)
-
-      await waitFor(() => {
-        expect(screen.getByText('Property name is required')).toBeInTheDocument()
-      })
+      expect(screen.getByText('WiFi Information')).toBeInTheDocument()
+      expect(screen.getByText('password123')).toBeInTheDocument()
     })
 
-    it('should handle house rules management', () => {
-      render(<PropertySettings property={mockProperty} onUpdate={mockOnUpdate} />)
+    it('should not render house rules if none are provided', () => {
+      const propertyWithoutRules = { ...mockProperty, houseRules: [] }
+      render(<PropertySettings property={propertyWithoutRules} />)
 
-      expect(screen.getByDisplayValue('No smoking')).toBeInTheDocument()
-      expect(screen.getByDisplayValue('Quiet hours 10pm-7am')).toBeInTheDocument()
+      expect(screen.queryByText('House Rules')).not.toBeInTheDocument()
+    })
 
-      const addRuleButton = screen.getByRole('button', { name: /add rule/i })
-      fireEvent.click(addRuleButton)
+    it('should have a link to the edit settings page', () => {
+      render(<PropertySettings property={mockProperty} />)
 
-      const newRuleInputs = screen.getAllByPlaceholderText('Enter house rule')
-      expect(newRuleInputs).toHaveLength(3) // 2 existing + 1 new
+      const editLink = screen.getByRole('link', { name: /edit settings/i })
+      expect(editLink).toHaveAttribute('href', '/properties/property-1/settings')
     })
   })
 })

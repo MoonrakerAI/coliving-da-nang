@@ -1,6 +1,21 @@
 import '@testing-library/jest-dom'
 import { vi } from 'vitest'
 
+// JSDOM doesn't implement hasPointerCapture
+if (typeof window !== 'undefined') {
+  if (!window.HTMLElement.prototype.hasPointerCapture) {
+    window.HTMLElement.prototype.hasPointerCapture = vi.fn();
+  }
+  if (!window.HTMLElement.prototype.scrollIntoView) {
+    window.HTMLElement.prototype.scrollIntoView = vi.fn();
+  }
+}
+
+import dotenv from 'dotenv'
+import './mocks/db'
+
+dotenv.config({ path: '.env.test' })
+
 // Mock Next.js router
 vi.mock('next/router', () => ({
   useRouter() {
@@ -32,6 +47,3 @@ global.ResizeObserver = vi.fn().mockImplementation(() => ({
   disconnect: vi.fn(),
 }))
 
-// Mock environment variables
-process.env.NEXTAUTH_URL = 'http://localhost:3000'
-process.env.NEXTAUTH_SECRET = 'test-secret'

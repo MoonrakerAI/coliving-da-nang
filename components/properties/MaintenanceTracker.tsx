@@ -313,7 +313,7 @@ export function MaintenanceTracker({
                   {record.cost && (
                     <div>
                       <span className="text-gray-600">Cost:</span>
-                      <p className="font-medium">${record.cost.toLocaleString()}</p>
+                      <p className="font-medium">${record.cost.toFixed(2)}</p>
                     </div>
                   )}
                 </div>

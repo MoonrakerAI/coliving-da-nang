@@ -266,7 +266,12 @@ export default function TemplateSelector({
           <DialogHeader>
             <DialogTitle>Create New Template</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
+          <form
+            onSubmit={(e) => { e.preventDefault(); handleCreateTemplate(); }}
+            className="space-y-4"
+            aria-label="Create New Template Form"
+            data-testid="create-template-form"
+          >
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>Template Name</Label>
@@ -281,7 +286,7 @@ export default function TemplateSelector({
                 <Select value={newTemplate.category} onValueChange={(value) => 
                   setNewTemplate(prev => ({ ...prev, category: value }))
                 }>
-                  <SelectTrigger>
+                  <SelectTrigger aria-label="Category">
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                   <SelectContent>
@@ -313,14 +318,14 @@ export default function TemplateSelector({
               </p>
             </div>
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setShowCreateForm(false)}>
+              <Button variant="outline" type="button" onClick={() => setShowCreateForm(false)}>
                 Cancel
               </Button>
-              <Button onClick={handleCreateTemplate}>
+              <Button type="submit">
                 Create Template
               </Button>
             </div>
-          </div>
+          </form>
         </DialogContent>
       </Dialog>
 
@@ -331,7 +336,7 @@ export default function TemplateSelector({
             <DialogTitle>Edit Template</DialogTitle>
           </DialogHeader>
           {editingTemplate && (
-            <div className="space-y-4">
+            <form onSubmit={(e) => { e.preventDefault(); handleUpdateTemplate(); }} className="space-y-4" aria-label="Edit Template Form">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label>Template Name</Label>
@@ -372,14 +377,14 @@ export default function TemplateSelector({
                 />
               </div>
               <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setEditingTemplate(null)}>
+                <Button variant="outline" type="button" onClick={() => setEditingTemplate(null)}>
                   Cancel
                 </Button>
-                <Button onClick={handleUpdateTemplate}>
-                  Update Template
+                <Button type="submit">
+                  Save Changes
                 </Button>
               </div>
-            </div>
+            </form>
           )}
         </DialogContent>
       </Dialog>

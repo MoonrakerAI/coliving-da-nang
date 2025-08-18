@@ -194,7 +194,7 @@ export default function IssueTracker({
                 </div>
               </div>
             </CardHeader>
-            <CardContent>
+            <CardContent aria-label="Update Issue Status">
               <p className="text-gray-700 mb-4">{issue.content}</p>
               
               <div className="flex justify-between items-center">
@@ -298,9 +298,9 @@ export default function IssueTracker({
 
       {/* Status Update Modal */}
       {statusUpdate && (
-        <Card className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+        <Card role="dialog" aria-modal="true" aria-labelledby="update-issue-status-title" className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
           <div className="bg-white p-6 rounded-lg w-96">
-            <h3 className="text-lg font-semibold mb-4">Update Issue Status</h3>
+            <h3 id="update-issue-status-title" className="text-lg font-semibold mb-4">Update Issue Status</h3>
             <div className="space-y-4">
               <Select 
                 value={statusUpdate.status} 
@@ -338,7 +338,7 @@ export default function IssueTracker({
       {escalationForm && (
         <Card className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
           <div className="bg-white p-6 rounded-lg w-96">
-            <h3 className="text-lg font-semibold mb-4">Escalate Issue</h3>
+            <h3 id="escalation-modal-title" className="text-lg font-semibold mb-4">Escalate Issue</h3>
             <div className="space-y-4">
               <input
                 type="text"

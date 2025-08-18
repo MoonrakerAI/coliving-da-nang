@@ -6,6 +6,8 @@ import { PaymentFilters } from './components/PaymentFilters'
 import { PaymentTable } from './components/PaymentTable'
 import { QuickActions } from './components/QuickActions'
 import { Payment, PaymentStatus } from '@/lib/db/models/payment'
+import { Property } from '@/lib/db/models/property'
+import { Tenant } from '@/lib/db/models/tenant'
 
 interface PaymentFilters {
   status: string
@@ -14,11 +16,14 @@ interface PaymentFilters {
   sortOrder: 'asc' | 'desc'
   startDate: string
   endDate: string
+  propertyId: string
 }
 
 export default function Dashboard() {
   const [payments, setPayments] = useState<Payment[]>([])
   const [filteredPayments, setFilteredPayments] = useState<Payment[]>([])
+  const [properties, setProperties] = useState<Property[]>([])
+  const [tenants, setTenants] = useState<Tenant[]>([])
   const [selectedPayments, setSelectedPayments] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -28,12 +33,15 @@ export default function Dashboard() {
     sortBy: 'dueDate',
     sortOrder: 'asc',
     startDate: '',
-    endDate: ''
+    endDate: '',
+    propertyId: 'all'
   })
 
   // Fetch payments
   useEffect(() => {
     fetchPayments()
+    fetchProperties()
+    fetchTenants()
   }, [])
 
   // Apply filters
@@ -57,12 +65,32 @@ export default function Dashboard() {
     }
   }
 
+  const fetchProperties = async () => {
+    try {
+      // NOTE: Using a hardcoded ownerId for now.
+      const response = await fetch('/api/properties?ownerId=a1b2c3d4-e5f6-7890-1234-567890abcdef')
+      if (!response.ok) {
+        throw new Error('Failed to fetch properties')
+      }
+      const data = await response.json()
+      setProperties(data.properties || [])
+    } catch (err) {
+      // Non-critical error, so we can just log it.
+      console.error(err instanceof Error ? err.message : 'Failed to load properties')
+    }
+  }
+
   const applyFilters = () => {
     let filtered = [...payments]
 
     // Status filter
     if (filters.status !== 'all') {
       filtered = filtered.filter(payment => payment.status === filters.status)
+    }
+
+    // Property filter
+    if (filters.propertyId !== 'all') {
+      filtered = filtered.filter(payment => payment.propertyId === filters.propertyId)
     }
 
     // Search filter
@@ -106,7 +134,12 @@ export default function Dashboard() {
       return filters.sortOrder === 'desc' ? -comparison : comparison
     })
 
-    setFilteredPayments(filtered)
+        const enrichedPayments = filtered.map(payment => ({
+      ...payment,
+      tenant: tenants.find(t => t.id === payment.tenantId) || null
+    })).filter(p => p.tenant) // Ensure tenant exists
+
+    setFilteredPayments(enrichedPayments)
   }
 
   const handleFilterChange = (newFilters: Partial<PaymentFilters>) => {
@@ -120,24 +153,44 @@ export default function Dashboard() {
       sortBy: 'dueDate',
       sortOrder: 'asc',
       startDate: '',
-      endDate: ''
+      endDate: '',
+      propertyId: 'all'
     })
   }
 
-  const handleMarkAsPaid = async (paymentId: string) => {
+    const handleStatusUpdate = async (paymentId: string, status: keyof typeof PaymentStatus) => {
     try {
       const response = await fetch(`/api/payments/${paymentId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: PaymentStatus.PAID, paidDate: new Date() })
+        body: JSON.stringify({ status, paidDate: status === PaymentStatus.PAID ? new Date() : null })
       })
       if (response.ok) {
         await fetchPayments()
+      } else {
+        console.error(`Failed to update payment ${paymentId} to ${status}`)
       }
     } catch (error) {
-      console.error('Failed to mark payment as paid:', error)
+      console.error(`Error updating payment status:`, error)
     }
   }
+
+    const handleToggleReminders = async (paymentId: string, remindersPaused: boolean) => {
+    try {
+      const response = await fetch(`/api/payments/${paymentId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ remindersPaused })
+      });
+      if (response.ok) {
+        await fetchPayments();
+      } else {
+        console.error(`Failed to update reminders status for payment ${paymentId}`);
+      }
+    } catch (error) {
+      console.error('Error toggling reminders:', error);
+    }
+  };
 
   const handleSendReminder = async (paymentId: string) => {
     try {
@@ -182,19 +235,38 @@ export default function Dashboard() {
     }
   }
 
-  const handleBulkReminders = async () => {
+    const handleBulkAction = async (action: 'markPaid' | 'sendReminders') => {
+    if (selectedPayments.length === 0) return
+
     try {
-      const overduePayments = filteredPayments.filter(p => p.status === PaymentStatus.OVERDUE)
-      const response = await fetch('/api/payments/bulk-reminders', {
+      const response = await fetch(`/api/payments/bulk-${action}`.replace(/([A-Z])/g, '-$1').toLowerCase(), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ paymentIds: overduePayments.map(p => p.id) })
+        body: JSON.stringify({ paymentIds: selectedPayments }),
       })
+
       if (response.ok) {
-        console.log('Bulk reminders sent successfully')
+        console.log(`Bulk action '${action}' successful`)
+        await fetchPayments() // Refresh data
+        setSelectedPayments([]) // Clear selection
+      } else {
+        console.error(`Failed to perform bulk action: ${action}`)
       }
     } catch (error) {
-      console.error('Failed to send bulk reminders:', error)
+      console.error(`Error during bulk action: ${action}`, error)
+    }
+  }
+
+    const fetchTenants = async () => {
+    try {
+      const response = await fetch('/api/tenants')
+      if (!response.ok) {
+        throw new Error('Failed to fetch tenants')
+      }
+      const data = await response.json()
+      setTenants(data.tenants || [])
+    } catch (err) {
+      console.error(err instanceof Error ? err.message : 'Failed to load tenants')
     }
   }
 
@@ -286,7 +358,7 @@ export default function Dashboard() {
       <QuickActions
         onExportPayments={handleExportPayments}
         onGenerateReport={handleGenerateReport}
-        onBulkReminders={handleBulkReminders}
+        onBulkAction={handleBulkAction}
         selectedCount={selectedPayments.length}
         totalPayments={stats.total}
       />
@@ -294,7 +366,9 @@ export default function Dashboard() {
       {/* Filters */}
       <PaymentFilters
         filters={filters}
-        onFilterChange={handleFilterChange}
+        onFilterChange={(filter) => handleFilterChange(filter)}
+        onSort={(sortBy, sortOrder) => handleFilterChange({ sortBy, sortOrder })}
+        properties={properties}
         onClearFilters={handleClearFilters}
         paymentCounts={{
           all: payments.length,
@@ -307,11 +381,14 @@ export default function Dashboard() {
       {/* Payment Cards - Mobile View */}
       <div className="block md:hidden space-y-4">
         {filteredPayments.map(payment => (
-          <PaymentStatusCard
+                    <PaymentStatusCard
             key={payment.id}
             payment={payment}
-            onMarkAsPaid={() => handleMarkAsPaid(payment.id)}
+            tenant={payment.tenant}
+            onStatusUpdate={(status) => handleStatusUpdate(payment.id, status)}
             onSendReminder={() => handleSendReminder(payment.id)}
+            onToggleReminders={handleToggleReminders}
+            onViewDetails={() => { /* TODO: Implement modal view */ }}
           />
         ))}
       </div>
@@ -322,8 +399,10 @@ export default function Dashboard() {
           payments={filteredPayments}
           selectedPayments={selectedPayments}
           onSelectionChange={setSelectedPayments}
-          onMarkAsPaid={handleMarkAsPaid}
-          onSendReminder={handleSendReminder}
+          onMarkAsPaid={(paymentId) => handleStatusUpdate(paymentId, 'PAID')}
+                    onSendReminder={handleSendReminder}
+          onToggleReminders={handleToggleReminders}
+          onBulkAction={handleBulkAction}
           onSort={(sortBy, sortOrder) => handleFilterChange({ sortBy, sortOrder })}
         />
       </div>

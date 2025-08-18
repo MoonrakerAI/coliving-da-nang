@@ -107,8 +107,8 @@ export async function getPayment(id: string): Promise<Payment | null> {
 // Update payment
 export async function updatePayment(input: UpdatePaymentInput): Promise<Payment | null> {
   try {
-    const validatedInput = UpdatePaymentSchema.parse(input)
-    const { id, ...updates } = validatedInput
+    const { id, ...updateData } = input;
+    const validatedUpdates = UpdatePaymentSchema.parse(updateData);
 
     // Get existing payment
     const existingPayment = await getPayment(id)
@@ -119,7 +119,7 @@ export async function updatePayment(input: UpdatePaymentInput): Promise<Payment 
     // Merge updates with existing data
     const updatedPayment: Payment = {
       ...existingPayment,
-      ...updates,
+      ...validatedUpdates,
       updatedAt: new Date()
     }
 
@@ -130,9 +130,9 @@ export async function updatePayment(input: UpdatePaymentInput): Promise<Payment 
     const paymentKey = getPaymentKey(id)
     
     // If status changed, update status indexes
-    if (updates.status && updates.status !== existingPayment.status) {
+    if (validatedUpdates.status && validatedUpdates.status !== existingPayment.status) {
       const oldStatusKey = getPaymentsByStatusKey(existingPayment.status)
-      const newStatusKey = getPaymentsByStatusKey(updates.status)
+      const newStatusKey = getPaymentsByStatusKey(validatedUpdates.status)
       
       const pipeline = db.pipeline()
       pipeline.srem(oldStatusKey, id)

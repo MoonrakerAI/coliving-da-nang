@@ -297,7 +297,7 @@ export default function NoteEditor({
               onKeyPress={(e) => e.key === 'Enter' && addTag()}
               className="flex-1"
             />
-            <Button size="sm" onClick={addTag}>
+            <Button size="sm" onClick={addTag} aria-label="Add Tag">
               <Plus className="h-4 w-4" />
             </Button>
           </div>

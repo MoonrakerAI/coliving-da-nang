@@ -1,5 +1,8 @@
-import { Resend } from 'resend'
-import { format } from 'date-fns'
+import { Resend } from 'resend';
+import { format, isToday, isFuture, isPast } from 'date-fns';
+import { Payment } from '../db/models/payment';
+import { Tenant } from '../db/models/tenant';
+import { getPropertyById } from '../db/operations/properties';
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
@@ -23,8 +26,28 @@ export interface EmailDeliveryResult {
 }
 
 export async function sendPaymentReminder(
-  props: ReminderEmailProps
+  payment: Payment,
+  tenant: Tenant
 ): Promise<EmailDeliveryResult> {
+  const property = await getPropertyById(payment.propertyId);
+  if (!property) {
+    throw new Error(`Property with ID ${payment.propertyId} not found`);
+  }
+
+  const reminderType = getReminderType(payment.dueDate, payment.status);
+
+  const props: ReminderEmailProps = {
+    tenantName: `${tenant.firstName} ${tenant.lastName}`,
+    tenantEmail: tenant.email,
+    paymentAmount: payment.amountCents / 100,
+    dueDate: payment.dueDate.toISOString(),
+    propertyName: property.name,
+    paymentMethods: property.settings.paymentMethods || [],
+    contactEmail: property.settings.contactEmail || 'support@coliving-danang.com',
+    paymentReference: payment.reference || payment.id,
+    propertyLogo: property.logoUrl,
+    reminderType: reminderType,
+  };
   try {
     const subject = getSubjectLine(props.reminderType, props.propertyName)
     const { html, text } = generateEmailContent(props)
@@ -55,6 +78,22 @@ export async function sendPaymentReminder(
       error: error instanceof Error ? error.message : 'Unknown error',
     }
   }
+}
+
+function getReminderType(dueDate: Date, status: string): 'upcoming' | 'due' | 'overdue' {
+  if (status === 'Overdue') {
+    return 'overdue';
+  }
+  if (isToday(dueDate)) {
+    return 'due';
+  }
+  if (isFuture(dueDate)) {
+    return 'upcoming';
+  }
+  if (isPast(dueDate)) {
+    return 'overdue';
+  }
+  return 'upcoming';
 }
 
 function getSubjectLine(reminderType: string, propertyName: string): string {

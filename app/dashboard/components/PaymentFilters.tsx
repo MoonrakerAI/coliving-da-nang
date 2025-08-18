@@ -2,10 +2,14 @@
 
 import { useState } from 'react'
 import { PaymentStatus } from '@/lib/db/models/payment'
+import { Property } from '@/lib/db/models/property'
 
 interface PaymentFiltersProps {
-  onFilterChange: (filters: PaymentFilters) => void
-  totalCounts: {
+  filters: any
+  onFilterChange: (filters: any) => void
+  onClearFilters: () => void
+  properties: Property[]
+  paymentCounts: {
     all: number
     paid: number
     pending: number
@@ -24,33 +28,13 @@ export interface PaymentFilters {
   sortOrder: 'asc' | 'desc'
 }
 
-export function PaymentFilters({ onFilterChange, totalCounts }: PaymentFiltersProps) {
-  const [filters, setFilters] = useState<PaymentFilters>({
-    status: 'all',
-    search: '',
-    dateRange: {},
-    sortBy: 'dueDate',
-    sortOrder: 'asc'
-  })
-
-  const updateFilters = (newFilters: Partial<PaymentFilters>) => {
-    const updatedFilters = { ...filters, ...newFilters }
-    setFilters(updatedFilters)
-    onFilterChange(updatedFilters)
+export function PaymentFilters({ filters, onFilterChange, onClearFilters, properties, paymentCounts }: PaymentFiltersProps) {
+  
+  const handleFilterChange = (key: string, value: any) => {
+    onFilterChange({ [key]: value })
   }
 
-  const clearFilters = () => {
-    const clearedFilters: PaymentFilters = {
-      status: 'all',
-      search: '',
-      dateRange: {},
-      sortBy: 'dueDate',
-      sortOrder: 'asc'
-    }
-    setFilters(clearedFilters)
-    onFilterChange(clearedFilters)
-  }
-
+  
   const getStatusBadgeClass = (status: string, count: number) => {
     const baseClass = "inline-flex items-center px-3 py-1 rounded-full text-sm font-medium cursor-pointer transition-colors"
     const isActive = filters.status === status
@@ -76,32 +60,32 @@ export function PaymentFilters({ onFilterChange, totalCounts }: PaymentFiltersPr
       {/* Status Filter Tabs */}
       <div className="flex flex-wrap gap-2 mb-6">
         <button
-          onClick={() => updateFilters({ status: 'all' })}
-          className={getStatusBadgeClass('all', totalCounts.all)}
-          disabled={totalCounts.all === 0}
+          onClick={() => handleFilterChange('status', 'all')}
+          className={getStatusBadgeClass('all', paymentCounts.all)}
+          disabled={paymentCounts.all === 0}
         >
-          All ({totalCounts.all})
+          All ({paymentCounts.all})
         </button>
         <button
-          onClick={() => updateFilters({ status: PaymentStatus.PAID })}
-          className={getStatusBadgeClass('paid', totalCounts.paid)}
-          disabled={totalCounts.paid === 0}
+          onClick={() => handleFilterChange('status', PaymentStatus.PAID)}
+          className={getStatusBadgeClass('paid', paymentCounts.paid)}
+          disabled={paymentCounts.paid === 0}
         >
-          ✓ Paid ({totalCounts.paid})
+          ✓ Paid ({paymentCounts.paid})
         </button>
         <button
-          onClick={() => updateFilters({ status: PaymentStatus.PENDING })}
-          className={getStatusBadgeClass('pending', totalCounts.pending)}
-          disabled={totalCounts.pending === 0}
+          onClick={() => handleFilterChange('status', PaymentStatus.PENDING)}
+          className={getStatusBadgeClass('pending', paymentCounts.pending)}
+          disabled={paymentCounts.pending === 0}
         >
-          ⏳ Pending ({totalCounts.pending})
+          ⏳ Pending ({paymentCounts.pending})
         </button>
         <button
-          onClick={() => updateFilters({ status: PaymentStatus.OVERDUE })}
-          className={getStatusBadgeClass('overdue', totalCounts.overdue)}
-          disabled={totalCounts.overdue === 0}
+          onClick={() => handleFilterChange('status', PaymentStatus.OVERDUE)}
+          className={getStatusBadgeClass('overdue', paymentCounts.overdue)}
+          disabled={paymentCounts.overdue === 0}
         >
-          ⚠️ Overdue ({totalCounts.overdue})
+          ⚠️ Overdue ({paymentCounts.overdue})
         </button>
       </div>
 
@@ -116,8 +100,8 @@ export function PaymentFilters({ onFilterChange, totalCounts }: PaymentFiltersPr
             <input
               type="text"
               id="search"
-              value={filters.search}
-              onChange={(e) => updateFilters({ search: e.target.value })}
+              value={filters.search || ''}
+              onChange={(e) => handleFilterChange('search', e.target.value)}
               placeholder="Search by name or room number..."
               className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
             />
@@ -137,7 +121,7 @@ export function PaymentFilters({ onFilterChange, totalCounts }: PaymentFiltersPr
           <select
             id="sortBy"
             value={filters.sortBy}
-            onChange={(e) => updateFilters({ sortBy: e.target.value as PaymentFilters['sortBy'] })}
+            onChange={(e) => handleFilterChange('sortBy', e.target.value)}
             className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
           >
             <option value="tenant">Tenant Name</option>
@@ -155,7 +139,7 @@ export function PaymentFilters({ onFilterChange, totalCounts }: PaymentFiltersPr
           <select
             id="sortOrder"
             value={filters.sortOrder}
-            onChange={(e) => updateFilters({ sortOrder: e.target.value as 'asc' | 'desc' })}
+            onChange={(e) => handleFilterChange('sortOrder', e.target.value)}
             className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
           >
             <option value="asc">Ascending</option>
@@ -173,13 +157,8 @@ export function PaymentFilters({ onFilterChange, totalCounts }: PaymentFiltersPr
           <input
             type="date"
             id="startDate"
-            value={filters.dateRange.start ? filters.dateRange.start.toISOString().split('T')[0] : ''}
-            onChange={(e) => updateFilters({ 
-              dateRange: { 
-                ...filters.dateRange, 
-                start: e.target.value ? new Date(e.target.value) : undefined 
-              } 
-            })}
+            value={filters.startDate || ''}
+            onChange={(e) => handleFilterChange('startDate', e.target.value)}
             className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
           />
         </div>
@@ -191,20 +170,15 @@ export function PaymentFilters({ onFilterChange, totalCounts }: PaymentFiltersPr
           <input
             type="date"
             id="endDate"
-            value={filters.dateRange.end ? filters.dateRange.end.toISOString().split('T')[0] : ''}
-            onChange={(e) => updateFilters({ 
-              dateRange: { 
-                ...filters.dateRange, 
-                end: e.target.value ? new Date(e.target.value) : undefined 
-              } 
-            })}
+            value={filters.endDate || ''}
+            onChange={(e) => handleFilterChange('endDate', e.target.value)}
             className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
           />
         </div>
 
         <div className="flex items-end">
           <button
-            onClick={clearFilters}
+            onClick={onClearFilters}
             className="w-full px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
           >
             Clear Filters
@@ -213,7 +187,27 @@ export function PaymentFilters({ onFilterChange, totalCounts }: PaymentFiltersPr
       </div>
 
       {/* Active Filters Summary */}
-      {(filters.search || filters.status !== 'all' || filters.dateRange.start || filters.dateRange.end) && (
+            {/* Property Filter */}
+      <div className="mt-4">
+        <label htmlFor="property" className="block text-sm font-medium text-gray-700 mb-1">
+          Filter by Property
+        </label>
+        <select
+          id="property"
+          value={filters.propertyId}
+          onChange={(e) => handleFilterChange('propertyId', e.target.value)}
+          className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+        >
+          <option value="all">All Properties</option>
+          {properties.map(property => (
+            <option key={property.id} value={property.id}>
+              {property.name}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {(filters.search || filters.status !== 'all' || filters.startDate || filters.endDate || filters.propertyId !== 'all') && (
         <div className="mt-4 p-3 bg-gray-50 rounded-md">
           <div className="flex items-center justify-between">
             <div className="flex flex-wrap gap-2">
@@ -228,7 +222,12 @@ export function PaymentFilters({ onFilterChange, totalCounts }: PaymentFiltersPr
                   Search: &ldquo;{filters.search}&rdquo;
                 </span>
               )}
-              {(filters.dateRange.start || filters.dateRange.end) && (
+                            {filters.propertyId !== 'all' && (
+                <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-indigo-100 text-indigo-800">
+                  Property: {properties.find(p => p.id === filters.propertyId)?.name || 'Unknown'}
+                </span>
+              )}
+              {(filters.startDate || filters.endDate) && (
                 <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-indigo-100 text-indigo-800">
                   Date range
                 </span>

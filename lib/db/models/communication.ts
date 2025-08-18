@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import type { Tenant } from './tenant';
 
 // Communication Types Enum
 export enum CommunicationType {
@@ -27,10 +28,23 @@ export enum CommunicationStatus {
   CLOSED = 'Closed'
 }
 
+export enum CommunicationDirection {
+  OUTGOING = 'outgoing',
+  INCOMING = 'incoming'
+}
+
+export enum CommunicationSource {
+  MANUAL = 'manual',
+  PAYMENT_REMINDER = 'payment_reminder',
+  AGREEMENT_REMINDER = 'agreement_reminder',
+  TENANT_REPLY = 'tenant_reply'
+}
+
 // Communication Schema
 export const CommunicationSchema = z.object({
   id: z.string(),
-  tenantId: z.string(),
+  tenantId: z.string().uuid(),
+  tenant: z.custom<Tenant>().optional(),
   propertyId: z.string(),
   type: z.nativeEnum(CommunicationType),
   subject: z.string().min(1, 'Subject is required'),
@@ -44,7 +58,10 @@ export const CommunicationSchema = z.object({
   attachments: z.array(z.string()).default([]),
   tags: z.array(z.string()).default([]),
   createdAt: z.date().default(() => new Date()),
-  updatedAt: z.date().default(() => new Date())
+  updatedAt: z.date().default(() => new Date()),
+  direction: z.nativeEnum(CommunicationDirection),
+  source: z.nativeEnum(CommunicationSource).default(CommunicationSource.MANUAL),
+  paymentId: z.string().optional()
 });
 
 // Communication Template Schema
