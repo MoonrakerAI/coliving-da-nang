@@ -1,68 +1,76 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { kv } from '@vercel/kv'
-import { Payment, PaymentSchema, UpdatePaymentSchema } from '@/lib/db/models/payment'
+import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth-config';
+import { getPaymentById, updatePayment, deletePayment } from '@/lib/db/operations/payments';
+import { UpdatePaymentSchema } from '@/lib/db/models/payment';
 
-export async function GET(request: NextRequest, { params }: { params: { paymentId: string } }) {
+async function checkAuth() {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+  return null;
+}
+
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { paymentId: string } }
+) {
   try {
-    const payment = await kv.get(`payment:${params.paymentId}`)
+    const authError = await checkAuth();
+    if (authError) return authError;
+
+    const payment = await getPaymentById(params.paymentId);
     if (!payment) {
-      return NextResponse.json({ error: 'Payment not found' }, { status: 404 })
+      return NextResponse.json({ message: 'Payment not found' }, { status: 404 });
     }
-    return NextResponse.json({ payment })
+
+    return NextResponse.json({ payment });
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to fetch payment' }, { status: 500 })
+    console.error('Error fetching payment:', error);
+    return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
   }
 }
 
-export async function PATCH(request: NextRequest, { params }: { params: { paymentId: string } }) {
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: { paymentId: string } }
+) {
   try {
-    const body = await request.json()
-    const validation = UpdatePaymentSchema.safeParse(body)
+    const authError = await checkAuth();
+    if (authError) return authError;
 
-    if (!validation.success) {
-      return NextResponse.json(validation.error.format(), { status: 400 })
+    const body = await request.json();
+    const validatedData = UpdatePaymentSchema.parse(body);
+
+    const updatedPayment = await updatePayment({ id: params.paymentId, ...validatedData });
+    if (!updatedPayment) {
+      return NextResponse.json({ message: 'Payment not found' }, { status: 404 });
     }
 
-    const existingPayment = await kv.get<Payment>(`payment:${params.paymentId}`)
-    if (!existingPayment) {
-      return NextResponse.json({ error: 'Payment not found' }, { status: 404 })
-    }
-
-    const updatedPayment: Payment = {
-      ...existingPayment,
-      ...validation.data,
-      updatedAt: new Date(),
-    }
-
-    await kv.set(`payment:${params.paymentId}`, updatedPayment)
-
-    return NextResponse.json({ payment: updatedPayment })
+    return NextResponse.json({ payment: updatedPayment });
   } catch (error) {
-    console.error('Error updating payment:', error)
-    return NextResponse.json({ error: 'Failed to update payment' }, { status: 500 })
+    console.error('Error updating payment:', error);
+    return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { paymentId: string } }) {
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { paymentId: string } }
+) {
   try {
-    const existingPayment = await kv.get<Payment>(`payment:${params.paymentId}`)
-    if (!existingPayment) {
-      return NextResponse.json({ error: 'Payment not found' }, { status: 404 })
+    const authError = await checkAuth();
+    if (authError) return authError;
+
+    const success = await deletePayment(params.paymentId);
+    if (!success) {
+      return NextResponse.json({ message: 'Payment not found or could not be deleted' }, { status: 404 });
     }
 
-    // Soft delete by setting deletedAt
-    const deletedPayment: Payment = {
-      ...existingPayment,
-      deletedAt: new Date(),
-    }
-
-    await kv.set(`payment:${params.paymentId}`, deletedPayment)
-
-    // Or hard delete if preferred
-    // await kv.del(`payment:${params.paymentId}`)
-
-    return NextResponse.json({ message: 'Payment deleted successfully' })
+    return NextResponse.json({ message: 'Payment deleted successfully' });
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to delete payment' }, { status: 500 })
+    console.error('Error deleting payment:', error);
+    return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
   }
 }
