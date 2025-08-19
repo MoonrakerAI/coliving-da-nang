@@ -359,17 +359,36 @@ export async function getUsersByProperty(propertyId: string): Promise<User[]> {
 
 // Seed default admin user for development
 export async function seedDefaultUsers(): Promise<void> {
-  // Check if admin user already exists
-  const adminExists = users.find(u => u.email === 'admin@coliving-danang.com')
-  if (adminExists) {
+  // Use env-configured admin for development convenience (dev-only; caller guards production)
+  const adminEmail = process.env.ADMIN_EMAIL || 'admin@coliving-danang.com'
+  const adminPassword = process.env.ADMIN_PASSWORD || 'Admin123!'
+
+  // Check if admin user already exists (by configured email)
+  const existingAdmin = users.find(u => u.email === adminEmail)
+  if (existingAdmin) {
+    // Optionally update password if provided via env
+    if (process.env.ADMIN_PASSWORD) {
+      const passwordHash = await hashPassword(adminPassword)
+      await setUserPassword(existingAdmin.id, passwordHash)
+    }
+
+    // Ensure role/status/flags are correct for admin
+    await updateUser(existingAdmin.id, {
+      role: UserRole.PROPERTY_OWNER,
+      status: UserStatus.ACTIVE,
+      isActive: true,
+      emailVerified: true,
+    })
+
+    console.log(`Admin user ensured: ${adminEmail}`)
     return
   }
   
-  // Create default admin user
+  // Create default admin user if missing
   await createUser({
-    email: 'admin@coliving-danang.com',
+    email: adminEmail,
     name: 'System Administrator',
-    password: 'Admin123!',
+    password: adminPassword,
     role: UserRole.PROPERTY_OWNER,
     status: UserStatus.ACTIVE,
     propertyIds: [],
@@ -377,5 +396,5 @@ export async function seedDefaultUsers(): Promise<void> {
     emailVerified: true
   })
   
-  console.log('Default admin user created: admin@coliving-danang.com / Admin123!')
+  console.log(`Default admin user created: ${adminEmail}`)
 }
