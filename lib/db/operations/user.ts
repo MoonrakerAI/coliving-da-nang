@@ -22,9 +22,24 @@ import {
   createAuditLog
 } from './audit-log'
 import { AuditEventType } from '../models/audit-log'
+import { db } from '../../db'
 
-// In-memory storage for development (replace with actual database in production)
-const users: User[] = []
+// Helper: normalize emails for consistent indexing
+function normalizeEmail(email: string): string {
+  return email.trim().toLowerCase()
+}
+
+// Environment control: prefer KV in production; allow opt-in in dev via USE_KV=true
+const USE_KV = process.env.NODE_ENV === 'production' || process.env.USE_KV === 'true'
+
+// KV key helpers
+const userKey = (id: string) => `user:${id}`
+const emailKey = (email: string) => `user:email:${normalizeEmail(email)}`
+const userIdsKey = 'user:ids'
+
+// In-memory fallback (used only when KV is not desired/available in non-prod)
+const memoryUsers: Map<string, User> = new Map()
+const memoryEmailIdx: Map<string, string> = new Map()
 
 // Password hashing
 export async function hashPassword(password: string): Promise<string> {
@@ -54,10 +69,8 @@ export async function createUser(
   const validatedData = CreateUserSchema.parse(userDataWithoutPassword)
   
   // Check if user already exists
-  const existingUser = users.find(u => u.email === validatedData.email)
-  if (existingUser) {
-    throw new Error('User with this email already exists')
-  }
+  const existing = await getUserByEmail(validatedData.email)
+  if (existing) throw new Error('User with this email already exists')
   
   // Hash password
   const passwordHash = await hashPassword(password)
@@ -75,8 +88,17 @@ export async function createUser(
   // Validate complete user object (apply defaults like failedLoginAttempts)
   const validatedUser = UserSchema.parse(rawUser)
   
-  // Store user
-  users.push(validatedUser)
+  // Store user (KV or memory)
+  if (USE_KV) {
+    await db.set(userKey(validatedUser.id), validatedUser)
+    await db.set(emailKey(validatedUser.email), validatedUser.id)
+    // Track IDs in a set for listing
+    // @ts-ignore vercel/kv supports sadd
+    await db.sadd(userIdsKey, validatedUser.id)
+  } else {
+    memoryUsers.set(validatedUser.id, validatedUser)
+    memoryEmailIdx.set(normalizeEmail(validatedUser.email), validatedUser.id)
+  }
   
   // Log user creation
   await logUserManagementEvent(
@@ -92,43 +114,60 @@ export async function createUser(
 }
 
 export async function getUserById(id: string): Promise<User | null> {
-  return users.find(u => u.id === id) || null
+  if (USE_KV) {
+    const user = await db.get<User>(userKey(id))
+    return user || null
+  }
+  return memoryUsers.get(id) || null
 }
 
 export async function getUserByEmail(email: string): Promise<User | null> {
-  return users.find(u => u.email === email) || null
+  const key = emailKey(email)
+  if (USE_KV) {
+    const id = await db.get<string>(key)
+    if (!id) return null
+    const user = await db.get<User>(userKey(id))
+    return user || null
+  }
+  const id = memoryEmailIdx.get(normalizeEmail(email))
+  return id ? (memoryUsers.get(id) || null) : null
 }
 
 export async function updateUser(id: string, updates: UpdateUser): Promise<User | null> {
-  const userIndex = users.findIndex(u => u.id === id)
-  if (userIndex === -1) {
-    return null
-  }
-  
-  // Validate updates
+  const current = await getUserById(id)
+  if (!current) return null
   const validatedUpdates = UpdateUserSchema.parse(updates)
-  
-  // Update user
-  const updatedUser = {
-    ...users[userIndex],
-    ...validatedUpdates,
-    updatedAt: new Date()
-  }
-  
-  // Validate complete user object
+  const updatedUser = { ...current, ...validatedUpdates, updatedAt: new Date() }
   const validatedUser = UserSchema.parse(updatedUser)
-  
-  users[userIndex] = validatedUser
+  if (USE_KV) {
+    await db.set(userKey(id), validatedUser)
+    // If email changed, update index
+    if (validatedUser.email !== current.email) {
+      await db.del(emailKey(current.email))
+      await db.set(emailKey(validatedUser.email), id)
+    }
+  } else {
+    memoryUsers.set(id, validatedUser)
+    if (validatedUser.email !== current.email) {
+      memoryEmailIdx.delete(normalizeEmail(current.email))
+      memoryEmailIdx.set(normalizeEmail(validatedUser.email), id)
+    }
+  }
   return validatedUser
 }
 
 export async function deleteUser(id: string): Promise<boolean> {
-  const userIndex = users.findIndex(u => u.id === id)
-  if (userIndex === -1) {
-    return false
+  const user = await getUserById(id)
+  if (!user) return false
+  if (USE_KV) {
+    await db.del(userKey(id))
+    await db.del(emailKey(user.email))
+    // @ts-ignore vercel/kv supports srem
+    await db.srem(userIdsKey, id)
+  } else {
+    memoryUsers.delete(id)
+    memoryEmailIdx.delete(normalizeEmail(user.email))
   }
-  
-  users.splice(userIndex, 1)
   return true
 }
 
@@ -233,7 +272,8 @@ export async function authenticateUser(
     { email }
   )
   
-  return user
+  // Return the latest stored user
+  return (await getUserById(user.id))
 }
 
 // Password reset operations
@@ -256,26 +296,20 @@ export async function initiatePasswordReset(email: string): Promise<string | nul
 }
 
 export async function resetPassword(token: string, newPassword: string): Promise<boolean> {
-  const user = users.find(u => 
-    u.passwordResetToken === token && 
-    u.passwordResetExpires && 
-    u.passwordResetExpires > new Date()
+  // KV search: iterate IDs and find matching token (small scale acceptable). For larger scale, add token index.
+  const candidate = await findUserByPredicate(async (u) => 
+    !!u.passwordResetToken && u.passwordResetToken === token && !!u.passwordResetExpires && u.passwordResetExpires > new Date()
   )
-  
-  if (!user) {
-    return false
-  }
-  
+  if (!candidate) return false
   const passwordHash = await hashPassword(newPassword)
-  await setUserPassword(user.id, passwordHash)
-  await updateUser(user.id, {
+  await setUserPassword(candidate.id, passwordHash)
+  await updateUser(candidate.id, {
     passwordResetToken: undefined,
     passwordResetExpires: undefined,
     failedLoginAttempts: 0,
     lockedUntil: undefined,
     status: UserStatus.ACTIVE
   })
-  
   return true
 }
 
@@ -302,12 +336,15 @@ export async function changePassword(userId: string, currentPassword: string, ne
 
 // Internal helper to update password hash (since UpdateUserSchema omits passwordHash)
 async function setUserPassword(userId: string, passwordHash: string): Promise<User | null> {
-  const idx = users.findIndex(u => u.id === userId)
-  if (idx === -1) return null
-  const updated = { ...users[idx], passwordHash, updatedAt: new Date() }
-  const validated = UserSchema.parse(updated)
-  users[idx] = validated
-  return validated
+  const user = await getUserById(userId)
+  if (!user) return null
+  const updated = UserSchema.parse({ ...user, passwordHash, updatedAt: new Date() })
+  if (USE_KV) {
+    await db.set(userKey(userId), updated)
+  } else {
+    memoryUsers.set(userId, updated)
+  }
+  return updated
 }
 
 // User invitation operations
@@ -328,33 +365,40 @@ export async function createUserInvitation(invitationData: CreateUser, invitedBy
 }
 
 export async function activateUserInvitation(token: string, password: string): Promise<User | null> {
-  const user = users.find(u => u.emailVerificationToken === token && u.status === UserStatus.PENDING)
-  if (!user) {
-    return null
-  }
-  
+  const pending = await findUserByPredicate(async (u) => u.emailVerificationToken === token && u.status === UserStatus.PENDING)
+  if (!pending) return null
   const passwordHash = await hashPassword(password)
-  await setUserPassword(user.id, passwordHash)
-  const updatedUser = await updateUser(user.id, {
+  await setUserPassword(pending.id, passwordHash)
+  const updatedUser = await updateUser(pending.id, {
     status: UserStatus.ACTIVE,
     emailVerified: true,
     emailVerificationToken: undefined
   })
-  
   return updatedUser
 }
 
 // Query operations
 export async function getAllUsers(): Promise<User[]> {
-  return [...users]
+  if (USE_KV) {
+    // @ts-ignore vercel/kv supports smembers
+    const ids: string[] = (await db.smembers(userIdsKey)) || []
+    if (ids.length === 0) return []
+    // @ts-ignore vercel/kv supports mget
+    const keys = ids.map((id) => userKey(id))
+    const usersArr = (await db.mget<User[]>(...keys)) as unknown as (User | null)[]
+    return usersArr.filter(Boolean) as User[]
+  }
+  return Array.from(memoryUsers.values())
 }
 
 export async function getUsersByRole(role: keyof typeof UserRole): Promise<User[]> {
-  return users.filter(u => u.role === role)
+  const list = await getAllUsers()
+  return list.filter(u => u.role === role)
 }
 
 export async function getUsersByProperty(propertyId: string): Promise<User[]> {
-  return users.filter(u => u.propertyIds.includes(propertyId))
+  const list = await getAllUsers()
+  return list.filter(u => u.propertyIds.includes(propertyId))
 }
 
 // Seed default admin user for development
@@ -364,7 +408,7 @@ export async function seedDefaultUsers(): Promise<void> {
   const adminPassword = process.env.ADMIN_PASSWORD || 'Admin123!'
 
   // Check if admin user already exists (by configured email)
-  const existingAdmin = users.find(u => u.email === adminEmail)
+  const existingAdmin = await getUserByEmail(adminEmail)
   if (existingAdmin) {
     // Optionally update password if provided via env
     if (process.env.ADMIN_PASSWORD) {
@@ -397,4 +441,21 @@ export async function seedDefaultUsers(): Promise<void> {
   })
   
   console.log(`Default admin user created: ${adminEmail}`)
+}
+
+// Utility: iterate users to find a match. Optimized for small datasets.
+async function findUserByPredicate(predicate: (u: User) => boolean | Promise<boolean>): Promise<User | null> {
+  if (USE_KV) {
+    // @ts-ignore
+    const ids: string[] = (await db.smembers(userIdsKey)) || []
+    for (const id of ids) {
+      const u = await db.get<User>(userKey(id))
+      if (u && (await predicate(u))) return u
+    }
+    return null
+  }
+  for (const u of memoryUsers.values()) {
+    if (await predicate(u)) return u
+  }
+  return null
 }
