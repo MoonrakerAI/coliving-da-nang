@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest'
 import {
+  Room,
+  RoomCondition,
+  OccupancyRecord,
+  MaintenanceRecord,
+  PropertyDetails,
   RoomSchema,
   CreateRoomSchema,
   UpdateRoomSchema,
@@ -50,7 +55,7 @@ describe('Room Models and Schemas', () => {
   })
 
   describe('RoomSchema', () => {
-    const validRoom = {
+    const validRoom: Omit<Room, 'deletedAt' | 'lastInspection'> & { lastInspection?: Date; features?: string[]; photos?: string[]; isAvailable?: boolean; condition?: RoomCondition; } = {
       id: '123e4567-e89b-12d3-a456-426614174000',
       propertyId: '123e4567-e89b-12d3-a456-426614174001',
       number: 'A101',
@@ -188,7 +193,7 @@ describe('Room Models and Schemas', () => {
   })
 
   describe('OccupancyRecordSchema', () => {
-    const validOccupancyRecord = {
+    const validOccupancyRecord: Omit<OccupancyRecord, 'deletedAt'> & { endDate?: Date | null } = {
       id: '123e4567-e89b-12d3-a456-426614174000',
       roomId: '123e4567-e89b-12d3-a456-426614174001',
       tenantId: '123e4567-e89b-12d3-a456-426614174002',
@@ -217,7 +222,7 @@ describe('Room Models and Schemas', () => {
   })
 
   describe('MaintenanceRecordSchema', () => {
-    const validMaintenanceRecord = {
+    const validMaintenanceRecord: Omit<MaintenanceRecord, 'deletedAt' | 'scheduledDate' | 'completedDate' | 'notes'> & { priority?: any; status?: any; cost?: number } = {
       id: '123e4567-e89b-12d3-a456-426614174000',
       roomId: '123e4567-e89b-12d3-a456-426614174001',
       propertyId: '123e4567-e89b-12d3-a456-426614174002',
@@ -297,7 +302,7 @@ describe('Room Models and Schemas', () => {
   })
 
   describe('PropertyDetailsSchema', () => {
-    const validPropertyDetails = {
+    const validPropertyDetails: Omit<PropertyDetails, 'deletedAt' | 'analytics'> & { rooms?: any[]; occupancyHistory?: any[]; maintenanceRecords?: any[]; } = {
       id: '123e4567-e89b-12d3-a456-426614174000',
       name: 'Sunset Villa',
       address: {

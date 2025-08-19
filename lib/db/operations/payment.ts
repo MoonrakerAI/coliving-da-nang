@@ -7,6 +7,7 @@ import {
   CreatePaymentSchema,
   UpdatePaymentSchema,
   PaymentStatus,
+  PaymentStatusType,
   PaymentMethod
 } from '../models/payment'
 
@@ -52,7 +53,7 @@ export async function getPaymentsByTenant(tenantId: string): Promise<Payment[]> 
   return payments.filter(p => p.tenantId === tenantId && !p.deletedAt)
 }
 
-export async function getPaymentsByStatus(status: keyof typeof PaymentStatus): Promise<Payment[]> {
+export async function getPaymentsByStatus(status: PaymentStatusType): Promise<Payment[]> {
   return payments.filter(p => p.status === status && !p.deletedAt)
 }
 
@@ -113,7 +114,7 @@ export async function markPaymentAsOverdue(id: string): Promise<Payment | null> 
 // Bulk operations
 export async function bulkUpdatePaymentStatus(
   paymentIds: string[], 
-  status: keyof typeof PaymentStatus,
+  status: PaymentStatusType,
   additionalData?: Partial<Payment>
 ): Promise<Payment[]> {
   const updatedPayments: Payment[] = []
@@ -135,7 +136,7 @@ export async function bulkUpdatePaymentStatus(
 export async function getFilteredPayments(filters: {
   propertyId?: string
   tenantId?: string
-  status?: keyof typeof PaymentStatus
+  status?: PaymentStatusType
   startDate?: Date
   endDate?: Date
   paymentMethod?: keyof typeof PaymentMethod

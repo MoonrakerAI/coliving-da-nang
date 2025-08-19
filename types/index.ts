@@ -1,19 +1,3 @@
-import 'next-auth';
-
-declare module 'next-auth' {
-  interface Session {
-    user: {
-      id: string;
-      role: UserRole;
-    } & DefaultSession['user'];
-  }
-
-  interface User {
-    id: string;
-    role: UserRole;
-  }
-}
-
 // Re-export all types from database models for consistency
 export * from '../lib/db/models/tenant'
 export * from '../lib/db/models/property'
@@ -27,23 +11,6 @@ export * from '../lib/db/models/reimbursement'
 export * from '../lib/db/models/reminder'
 export * from '../lib/db/models/room'
 export * from '../lib/db/models/audit-log'
-
-// Legacy User types for compatibility (to be migrated)
-export interface User {
-  id: string
-  email: string
-  name: string
-  role: UserRole
-  propertyId?: string
-  createdAt: Date
-  updatedAt: Date
-}
-
-export enum UserRole {
-  OWNER = 'owner',
-  MANAGER = 'manager',
-  TENANT = 'tenant'
-}
 
 // API Response types
 export interface ApiResponse<T> {
@@ -127,6 +94,11 @@ export interface CreateExpenseForm {
 }
 
 // Dashboard and analytics types
+import { Property } from '../lib/db/models/property'
+import { Tenant } from '../lib/db/models/tenant'
+import { Payment } from '../lib/db/models/payment'
+import { Expense } from '../lib/db/models/expense'
+
 export interface PropertyDashboard {
   property: Property
   tenants: Tenant[]
@@ -265,7 +237,7 @@ export interface TaskDashboard {
   completedTasks: number
   overdueTasks: number
   tasksByStatus: Record<TaskStatus, number>
-  tasksByCategory: Record<TaskCategory, number>
+  tasksByCategory: Record<TaskCategory, CategoryMetrics>
   tasksByPriority: Record<TaskPriority, number>
   recentTasks: Task[]
   upcomingDeadlines: Task[]

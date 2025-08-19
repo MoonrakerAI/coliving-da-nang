@@ -3,31 +3,23 @@ import { JWT } from 'next-auth/jwt'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import { authenticateUser } from './db/operations/user'
 import { LoginSchema } from './db/models/user'
-import { UserRole as DBUserRole } from './db/models/user'
-
-// User roles for role-based access control (matching database model)
-export enum UserRole {
-  PROPERTY_OWNER = 'PROPERTY_OWNER',
-  COMMUNITY_MANAGER = 'COMMUNITY_MANAGER', 
-  TENANT = 'TENANT'
-}
+import { UserRole } from './db/models/user'
 
 // Extend the built-in session types
 declare module 'next-auth' {
   interface Session {
     user: {
       id: string
-      email: string
-      name: string
       role: UserRole
-      propertyId?: string
-    }
+      propertyIds: string[]
+    } & Omit<User, 'role'>
   }
 
   interface User {
     id: string
-    email: string
-    name: string
+    email?: string | null
+    name?: string | null
+    image?: string | null
     role: UserRole
     propertyIds: string[]
   }
@@ -93,6 +85,8 @@ export const authOptions: NextAuthOptions = {
         token.id = user.id
         token.role = user.role
         token.propertyIds = user.propertyIds
+        token.email = user.email
+        token.name = user.name
       }
       return token
     },
@@ -101,6 +95,8 @@ export const authOptions: NextAuthOptions = {
         session.user.id = token.id
         session.user.role = token.role
         session.user.propertyIds = token.propertyIds
+        session.user.email = token.email
+        session.user.name = token.name
       }
       return session
     },

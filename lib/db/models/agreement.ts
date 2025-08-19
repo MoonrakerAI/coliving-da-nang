@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { PropertySchema } from './property'
 
 // Agreement status enum
 export const AgreementStatus = {
@@ -91,6 +92,9 @@ export const AgreementSchema = z.object({
   // Tenant creation tracking
   tenantCreated: z.boolean().default(false),
   tenantId: z.string().uuid('Invalid tenant ID format').optional(),
+  
+  // Relational data
+  property: PropertySchema.optional(),
   
   // Metadata
   createdAt: z.date(),

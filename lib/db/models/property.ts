@@ -31,12 +31,15 @@ export const PropertySchema = z.object({
   address: AddressSchema,
   roomCount: z.number().int().positive('Room count must be positive'),
   settings: PropertySettingsSchema,
-  houseRules: z.array(z.string()).default([]),
+  houseRules: z.array(z.string()).optional(),
   ownerId: z.string().uuid('Invalid owner ID format'),
   isActive: z.boolean().default(true),
   createdAt: z.date(),
   updatedAt: z.date(),
-  deletedAt: z.date().optional() // For soft deletes
+  deletedAt: z.date().optional(), // For soft deletes
+  rooms: z.array(z.string()).optional(), // Array of Room IDs
+  occupancyHistory: z.array(z.object({})).optional(),
+  maintenanceRecords: z.array(z.string()).optional() // Array of Maintenance Record IDs
 })
 
 export type Property = z.infer<typeof PropertySchema>

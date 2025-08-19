@@ -258,8 +258,6 @@ export function PaymentTable({
                         </button>
                       </>
                     )}
-
-                                          )}
                   </td>
                 </tr>
               )

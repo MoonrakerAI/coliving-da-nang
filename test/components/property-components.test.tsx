@@ -150,6 +150,7 @@ describe('Property Management Components', () => {
         '/properties/prop-1/settings'
       )
     })
+  })
 
   describe('RoomGrid', () => {
     const mockRooms = [

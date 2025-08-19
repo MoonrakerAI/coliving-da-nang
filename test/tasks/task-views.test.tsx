@@ -76,11 +76,22 @@ const mockMetrics: TaskMetricsType = {
   },
   tasksByCategory: {
     [TaskCategory.CLEANING]: {
-      category: TaskCategory.CLEANING,
-      totalTasks: 10,
-      completedTasks: 8,
-      averageCompletionTime: 1.5,
-      overdueRate: 5
+      category: TaskCategory.CLEANING, totalTasks: 10, completedTasks: 8, averageCompletionTime: 1.5, overdueRate: 5
+    },
+    [TaskCategory.MAINTENANCE]: {
+      category: TaskCategory.MAINTENANCE, totalTasks: 5, completedTasks: 5, averageCompletionTime: 2.0, overdueRate: 0
+    },
+    [TaskCategory.ADMINISTRATIVE]: {
+      category: TaskCategory.ADMINISTRATIVE, totalTasks: 2, completedTasks: 1, averageCompletionTime: 3.0, overdueRate: 0
+    },
+    [TaskCategory.INSPECTION]: {
+      category: TaskCategory.INSPECTION, totalTasks: 1, completedTasks: 1, averageCompletionTime: 1.0, overdueRate: 0
+    },
+    [TaskCategory.EMERGENCY]: {
+      category: TaskCategory.EMERGENCY, totalTasks: 0, completedTasks: 0, averageCompletionTime: 0, overdueRate: 0
+    },
+    [TaskCategory.OTHER]: {
+      category: TaskCategory.OTHER, totalTasks: 3, completedTasks: 2, averageCompletionTime: 4.0, overdueRate: 33
     }
   },
   productivityTrends: [
@@ -252,7 +263,11 @@ describe('KanbanBoard Component', () => {
     onTaskMove: vi.fn(),
     onTaskClick: vi.fn(),
     wipLimits: {
-      [TaskStatus.IN_PROGRESS]: 5
+      [TaskStatus.PENDING]: 10,
+      [TaskStatus.IN_PROGRESS]: 5,
+      [TaskStatus.COMPLETED]: 999, // No practical limit
+      [TaskStatus.OVERDUE]: 999,
+      [TaskStatus.CANCELLED]: 999
     }
   }
 

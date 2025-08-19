@@ -41,7 +41,7 @@ vi.mock('uuid', () => ({
   v4: vi.fn(() => '123e4567-e89b-12d3-a456-426614174000')
 }))
 
-import { db } from '../../lib/db/index'
+import { kv as db } from '@vercel/kv'
 
 describe('Room Operations', () => {
   beforeEach(() => {

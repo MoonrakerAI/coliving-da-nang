@@ -1,4 +1,5 @@
 import { db } from '../../db'
+import { getProperty } from './properties'
 import { 
   Agreement,
   AgreementTemplate,
@@ -326,7 +327,17 @@ export async function getAgreement(id: string): Promise<Agreement | null> {
       tenantCreated: data.tenantCreated === 'true'
     }
 
-    return AgreementSchema.parse(agreement)
+    const validatedAgreement = AgreementSchema.parse(agreement)
+
+    // Fetch and attach property details
+    if (validatedAgreement.propertyId) {
+      const property = await getProperty(validatedAgreement.propertyId)
+      if (property) {
+        validatedAgreement.property = property
+      }
+    }
+
+    return validatedAgreement
   } catch (error) {
     console.error('Error getting agreement:', error)
     return null

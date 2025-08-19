@@ -48,24 +48,43 @@ describe('Reminder Scheduler', () => {
           id: 'payment-1',
           tenantId: 'tenant-1',
           propertyId: 'property-1',
-          amount: 150000,
-          dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days from now
-          status: 'pending',
-          reference: 'PAY-001'
+          amountCents: 150000,
+          dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+          status: 'Pending',
+          reference: 'PAY-001',
+          currency: 'USD',
+          paymentMethod: 'Cash',
+          description: 'Monthly Rent',
+          createdAt: new Date(),
+          updatedAt: new Date(),
         }
       ]
 
       const mockTenant = {
         id: 'tenant-1',
-        name: 'John Doe',
-        email: 'john@example.com'
+        firstName: 'John',
+        lastName: 'Doe',
+        email: 'john@example.com',
+        phone: '123-456-7890',
+        status: 'Active',
+        propertyId: 'property-1',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        emergencyContacts: [],
+        documents: [],
+        communicationHistory: [],
+        leaseHistory: [],
       }
 
       const mockProperty = {
         id: 'property-1',
         name: 'Test Property',
-        contactEmail: 'management@test.com',
-        paymentMethods: ['Bank Transfer', 'Cash']
+        address: { street: '123 Main St', city: 'Da Nang', country: 'VN', postalCode: '550000', state: 'Da Nang' },
+        roomCount: 10,
+        ownerId: 'owner-1',
+        settings: { allowPets: false, smokingAllowed: false, maxOccupancy: 20, checkInTime: '14:00', checkOutTime: '12:00' },
+        createdAt: new Date(),
+        updatedAt: new Date(),
       }
 
       vi.mocked(getPaymentsByStatus).mockResolvedValue(mockPayments)
@@ -96,9 +115,15 @@ describe('Reminder Scheduler', () => {
           id: 'payment-1',
           tenantId: 'tenant-1',
           propertyId: 'property-1',
-          amount: 150000,
-          dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-          status: 'pending'
+          amountCents: 150000,
+          dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+          status: 'Pending',
+          reference: 'PAY-001',
+          currency: 'USD',
+          paymentMethod: 'Cash',
+          description: 'Monthly Rent',
+          createdAt: new Date(),
+          updatedAt: new Date(),
         }
       ]
 
@@ -106,8 +131,14 @@ describe('Reminder Scheduler', () => {
         {
           id: 'reminder-1',
           paymentId: 'payment-1',
-          sentAt: new Date().toISOString(), // Today
-          reminderType: 'upcoming'
+          sentAt: new Date(), // Today
+          reminderType: 'upcoming',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          tenantId: 'tenant-1',
+          propertyId: 'property-1',
+          status: 'Sent',
+          channel: 'Email',
         }
       ]
 
@@ -146,15 +177,21 @@ describe('Reminder Scheduler', () => {
           id: 'payment-1',
           tenantId: 'tenant-1',
           propertyId: 'property-1',
-          amount: 150000,
-          dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-          status: 'pending'
+          amountCents: 150000,
+          dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+          status: 'Pending',
+          reference: 'PAY-001',
+          currency: 'USD',
+          paymentMethod: 'Cash',
+          description: 'Monthly Rent',
+          createdAt: new Date(),
+          updatedAt: new Date(),
         }
       ]
 
       vi.mocked(getPaymentsByStatus).mockResolvedValue(mockPayments)
-      vi.mocked(getTenantById).mockResolvedValue({ id: 'tenant-1', name: 'John', email: 'john@test.com' })
-      vi.mocked(getPropertyById).mockResolvedValue({ id: 'property-1', name: 'Test Property' })
+      vi.mocked(getTenantById).mockResolvedValue({ id: 'tenant-1', firstName: 'John', lastName: 'Doe', email: 'john@test.com', phone: '123', status: 'Active', propertyId: 'property-1', createdAt: new Date(), updatedAt: new Date(), emergencyContacts:[], documents:[], communicationHistory:[], leaseHistory:[] })
+      vi.mocked(getPropertyById).mockResolvedValue({ id: 'property-1', name: 'Test Property', address: { street: '123 Main St', city: 'Da Nang', country: 'VN', postalCode: '550000', state: 'Da Nang' }, roomCount: 10, ownerId: 'owner-1', settings: { allowPets: false, smokingAllowed: false, maxOccupancy: 20, checkInTime: '14:00', checkOutTime: '12:00' }, createdAt: new Date(), updatedAt: new Date() })
       vi.mocked(getReminderHistory).mockResolvedValue([])
       vi.mocked(checkRateLimit).mockReturnValue(false) // Rate limit exceeded
 
@@ -167,34 +204,53 @@ describe('Reminder Scheduler', () => {
   })
 
   describe('sendManualReminder', () => {
-    const { getPaymentById } = vi.mocked(require('@/lib/db/operations/payments'))
-    const { getTenantById } = vi.mocked(require('@/lib/db/operations/tenants'))
-    const { getPropertyById } = vi.mocked(require('@/lib/db/operations/properties'))
-    const { sendPaymentReminder, checkRateLimit } = vi.mocked(require('@/lib/email/reminder-sender'))
-    const { createReminderLog } = vi.mocked(require('@/lib/db/operations/reminders'))
-
     it('should send manual reminder successfully', async () => {
+      const { getPaymentById } = await import('@/lib/db/operations/payments')
+      const { getTenantById } = await import('@/lib/db/operations/tenants')
+      const { getPropertyById } = await import('@/lib/db/operations/properties')
+      const { sendPaymentReminder, checkRateLimit } = await import('@/lib/email/reminder-sender')
+      const { createReminderLog } = await import('@/lib/db/operations/reminders')
 
       const mockPayment = {
         id: 'payment-1',
         tenantId: 'tenant-1',
         propertyId: 'property-1',
-        amount: 150000,
-        dueDate: new Date().toISOString(),
-        status: 'pending'
+        amountCents: 150000,
+        dueDate: new Date(),
+        status: 'Pending',
+        reference: 'PAY-001',
+        currency: 'USD',
+        paymentMethod: 'Cash',
+        description: 'Monthly Rent',
+        createdAt: new Date(),
+        updatedAt: new Date(),
       }
 
       const mockTenant = {
         id: 'tenant-1',
-        name: 'John Doe',
-        email: 'john@example.com'
+        firstName: 'John',
+        lastName: 'Doe',
+        email: 'john@example.com',
+        phone: '123-456-7890',
+        status: 'Active',
+        propertyId: 'property-1',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        emergencyContacts: [],
+        documents: [],
+        communicationHistory: [],
+        leaseHistory: [],
       }
 
       const mockProperty = {
         id: 'property-1',
         name: 'Test Property',
-        contactEmail: 'management@test.com',
-        paymentMethods: ['Bank Transfer']
+        address: { street: '123 Main St', city: 'Da Nang', country: 'VN', postalCode: '550000', state: 'Da Nang' },
+        roomCount: 10,
+        ownerId: 'owner-1',
+        settings: { allowPets: false, smokingAllowed: false, maxOccupancy: 20, checkInTime: '14:00', checkOutTime: '12:00' },
+        createdAt: new Date(),
+        updatedAt: new Date(),
       }
 
       vi.mocked(getPaymentById).mockResolvedValue(mockPayment)
@@ -214,6 +270,7 @@ describe('Reminder Scheduler', () => {
     })
 
     it('should handle payment not found', async () => {
+      const { getPaymentById } = await import('@/lib/db/operations/payments')
       getPaymentById.mockResolvedValue(null)
 
       const result = await sendManualReminder('nonexistent-payment', 'due')
@@ -223,13 +280,28 @@ describe('Reminder Scheduler', () => {
     })
 
     it('should handle email sending failure', async () => {
+      const { getPaymentById } = await import('@/lib/db/operations/payments')
+      const { getTenantById } = await import('@/lib/db/operations/tenants')
+      const { getPropertyById } = await import('@/lib/db/operations/properties')
+      const { sendPaymentReminder, checkRateLimit } = await import('@/lib/email/reminder-sender')
+      const { createReminderLog } = await import('@/lib/db/operations/reminders')
+
       getPaymentById.mockResolvedValue({
         id: 'payment-1',
         tenantId: 'tenant-1',
-        propertyId: 'property-1'
+        propertyId: 'property-1',
+        amountCents: 150000,
+        dueDate: new Date(),
+        status: 'Pending',
+        reference: 'PAY-001',
+        currency: 'USD',
+        paymentMethod: 'Cash',
+        description: 'Monthly Rent',
+        createdAt: new Date(),
+        updatedAt: new Date(),
       } as any)
-      vi.mocked(getTenantById).mockResolvedValue({ id: 'tenant-1', name: 'John', email: 'john@test.com' })
-      vi.mocked(getPropertyById).mockResolvedValue({ id: 'property-1', name: 'Test Property' })
+      vi.mocked(getTenantById).mockResolvedValue({ id: 'tenant-1', firstName: 'John', lastName: 'Doe', email: 'john@test.com', phone: '123', status: 'Active', propertyId: 'property-1', createdAt: new Date(), updatedAt: new Date(), emergencyContacts:[], documents:[], communicationHistory:[], leaseHistory:[] })
+      vi.mocked(getPropertyById).mockResolvedValue({ id: 'property-1', name: 'Test Property', address: { street: '123 Main St', city: 'Da Nang', country: 'VN', postalCode: '550000', state: 'Da Nang' }, roomCount: 10, ownerId: 'owner-1', settings: { allowPets: false, smokingAllowed: false, maxOccupancy: 20, checkInTime: '14:00', checkOutTime: '12:00' }, createdAt: new Date(), updatedAt: new Date() })
       vi.mocked(checkRateLimit).mockReturnValue(true)
       vi.mocked(sendPaymentReminder).mockResolvedValue({
         success: false,

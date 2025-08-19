@@ -217,7 +217,6 @@ export function PaymentStatusCard({
             </button>
           </>
         )}
-                  )}
       </div>
 
       {payment.notes && (
