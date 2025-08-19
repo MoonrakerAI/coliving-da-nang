@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -56,15 +56,7 @@ export default function TenantIntegrationPage() {
   const [integrationFilter, setIntegrationFilter] = useState<string>('all')
   const [processingTenant, setProcessingTenant] = useState<string | null>(null)
 
-  useEffect(() => {
-    loadAgreements()
-  }, [])
-
-  useEffect(() => {
-    filterAgreements()
-  }, [agreements, searchTerm, statusFilter, integrationFilter])
-
-  const loadAgreements = async () => {
+  const loadAgreements = useCallback(async () => {
     try {
       setLoading(true)
       const response = await fetch('/api/agreements/track')
@@ -88,9 +80,9 @@ export default function TenantIntegrationPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
-  const filterAgreements = () => {
+  const filterAgreements = useCallback(() => {
     const filtered = agreements.filter(agreement => {
       const matchesSearch = 
         agreement.prospectName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -105,7 +97,19 @@ export default function TenantIntegrationPage() {
     })
 
     setFilteredAgreements(filtered)
+  }, [agreements, searchTerm, statusFilter, integrationFilter])
+
+  useEffect(() => {
+    loadAgreements()
+  }, [loadAgreements])
+
+  useEffect(() => {
+    filterAgreements()
+  }, [filterAgreements])
+
+  const oldLoad = async () => {
   }
+
 
   const getIntegrationStatus = (agreement: any): 'pending' | 'completed' | 'failed' | 'not_applicable' => {
     if (!['Signed', 'Completed'].includes(agreement.status)) {

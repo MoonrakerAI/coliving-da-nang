@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { X, Camera, Image, Plus } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -138,11 +138,11 @@ function PhotoPreview({ photo, onRemove }: PhotoPreviewProps) {
   const [imageUrl, setImageUrl] = useState<string>('')
 
   // Create preview URL
-  useState(() => {
+  useEffect(() => {
     const url = URL.createObjectURL(photo)
     setImageUrl(url)
     return () => URL.revokeObjectURL(url)
-  })
+  }, [photo])
 
   return (
     <div className="relative group">

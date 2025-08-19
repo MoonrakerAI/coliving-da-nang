@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { PaymentStatusCard } from './components/PaymentStatusCard'
 import { PaymentFilters } from './components/PaymentFilters'
 import { PaymentTable } from './components/PaymentTable'
@@ -37,19 +37,7 @@ export default function Dashboard() {
     propertyId: 'all'
   })
 
-  // Fetch payments
-  useEffect(() => {
-    fetchPayments()
-    fetchProperties()
-    fetchTenants()
-  }, [])
-
-  // Apply filters
-  useEffect(() => {
-    applyFilters()
-  }, [payments, filters])
-
-  const fetchPayments = async () => {
+  const fetchPayments = useCallback(async () => {
     try {
       setLoading(true)
       const response = await fetch('/api/payments')
@@ -63,9 +51,9 @@ export default function Dashboard() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
-  const fetchProperties = async () => {
+  const fetchProperties = useCallback(async () => {
     try {
       // NOTE: Using a hardcoded ownerId for now.
       const response = await fetch('/api/properties?ownerId=a1b2c3d4-e5f6-7890-1234-567890abcdef')
@@ -78,9 +66,9 @@ export default function Dashboard() {
       // Non-critical error, so we can just log it.
       console.error(err instanceof Error ? err.message : 'Failed to load properties')
     }
-  }
+  }, [])
 
-  const applyFilters = () => {
+  const applyFilters = useCallback(() => {
     let filtered = [...payments]
 
     // Status filter
@@ -134,13 +122,13 @@ export default function Dashboard() {
       return filters.sortOrder === 'desc' ? -comparison : comparison
     })
 
-        const enrichedPayments = filtered.map(payment => ({
+    const enrichedPayments = filtered.map(payment => ({
       ...payment,
       tenant: tenants.find(t => t.id === payment.tenantId) || null
     })).filter(p => p.tenant) // Ensure tenant exists
 
     setFilteredPayments(enrichedPayments)
-  }
+  }, [payments, filters, tenants])
 
   const handleFilterChange = (newFilters: Partial<PaymentFilters>) => {
     setFilters(prev => ({ ...prev, ...newFilters }))
@@ -158,7 +146,7 @@ export default function Dashboard() {
     })
   }
 
-    const handleStatusUpdate = async (paymentId: string, status: keyof typeof PaymentStatus) => {
+  const handleStatusUpdate = async (paymentId: string, status: keyof typeof PaymentStatus) => {
     try {
       const response = await fetch(`/api/payments/${paymentId}`, {
         method: 'PATCH',
@@ -175,7 +163,7 @@ export default function Dashboard() {
     }
   }
 
-    const handleToggleReminders = async (paymentId: string, remindersPaused: boolean) => {
+  const handleToggleReminders = async (paymentId: string, remindersPaused: boolean) => {
     try {
       const response = await fetch(`/api/payments/${paymentId}`, {
         method: 'PATCH',
@@ -235,7 +223,7 @@ export default function Dashboard() {
     }
   }
 
-    const handleBulkAction = async (action: 'markPaid' | 'sendReminders') => {
+  const handleBulkAction = async (action: 'markPaid' | 'sendReminders') => {
     if (selectedPayments.length === 0) return
 
     try {
@@ -257,7 +245,7 @@ export default function Dashboard() {
     }
   }
 
-    const fetchTenants = async () => {
+  const fetchTenants = useCallback(async () => {
     try {
       const response = await fetch('/api/tenants')
       if (!response.ok) {
@@ -268,7 +256,19 @@ export default function Dashboard() {
     } catch (err) {
       console.error(err instanceof Error ? err.message : 'Failed to load tenants')
     }
-  }
+  }, [])
+
+  // Fetch payments
+  useEffect(() => {
+    fetchPayments()
+    fetchProperties()
+    fetchTenants()
+  }, [fetchPayments, fetchProperties, fetchTenants])
+
+  // Apply filters
+  useEffect(() => {
+    applyFilters()
+  }, [applyFilters])
 
   // Calculate statistics
   const stats = {

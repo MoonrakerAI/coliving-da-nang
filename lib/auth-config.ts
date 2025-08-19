@@ -4,6 +4,7 @@ import CredentialsProvider from 'next-auth/providers/credentials'
 import { authenticateUser } from './db/operations/user'
 import { LoginSchema } from './db/models/user'
 import { UserRole } from './db/models/user'
+export { UserRole }
 
 // Extend the built-in session types
 declare module 'next-auth' {

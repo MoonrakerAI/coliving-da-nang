@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -60,11 +60,7 @@ export default function Payments() {
   const [methodFilter, setMethodFilter] = useState('all')
   const [activeTab, setActiveTab] = useState('overview')
 
-  useEffect(() => {
-    loadPayments()
-  }, [statusFilter, methodFilter])
-
-  const loadPayments = async () => {
+  const loadPayments = useCallback(async () => {
     try {
       setLoading(true)
       const params = new URLSearchParams()
@@ -95,7 +91,12 @@ export default function Payments() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [statusFilter, methodFilter])
+
+  useEffect(() => {
+    loadPayments()
+  }, [loadPayments])
+
 
   const getStatusBadge = (status: string) => {
     const variants = {

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Property } from '@/lib/db/models/property'
 import { PropertyCard } from '@/components/properties/PropertyCard'
 import { MultiPropertyStats } from '@/components/properties/PropertySelector'
@@ -13,11 +13,7 @@ export default function PropertiesPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    fetchProperties()
-  }, [])
-
-  const fetchProperties = async () => {
+  const fetchProperties = useCallback(async () => {
     try {
       setLoading(true)
       // TODO: Replace with actual owner ID from auth context
@@ -35,7 +31,12 @@ export default function PropertiesPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    fetchProperties()
+  }, [fetchProperties])
+
 
   if (loading) {
     return (

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { Property } from '@/lib/db/models/property'
 import { Button } from '@/components/ui/button'
@@ -67,13 +67,40 @@ export default function PropertySettingsPage() {
 
   const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<PropertyFormData>()
 
-  useEffect(() => {
-    if (propertyId) {
-      fetchProperty()
-    }
-  }, [propertyId])
+  const fetchProperty = useCallback(async () => {
+    if (!propertyId) return
+    try {
+      setLoading(true)
+      const response = await fetch(`/api/properties/${propertyId}`)
+      
+      if (!response.ok) {
+        throw new Error('Property not found')
+      }
+      
+      const data = await response.json()
+      const prop = data.property
+      setProperty(prop)
 
-  const fetchProperty = async () => {
+      // Populate form with existing data
+      setValue('name', prop.name)
+      setValue('address', prop.address)
+      setValue('roomCount', prop.roomCount)
+      setValue('settings', prop.settings)
+      setValue('houseRules', prop.houseRules)
+      setValue('isActive', prop.isActive)
+
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load property')
+    } finally {
+      setLoading(false)
+    }
+  }, [propertyId, setValue])
+
+  useEffect(() => {
+    fetchProperty()
+  }, [fetchProperty])
+
+  const onSubmit = async (data: PropertyFormData) => {
     try {
       setLoading(true)
       const response = await fetch(`/api/properties/${propertyId}`)

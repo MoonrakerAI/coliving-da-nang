@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -37,11 +37,8 @@ export default function AgreementSigningPage() {
   const [error, setError] = useState<string | null>(null)
   const [initiatingSign, setInitiatingSign] = useState(false)
 
-  useEffect(() => {
-    loadAgreementData()
-  }, [agreementId])
-
-  const loadAgreementData = async () => {
+  const loadAgreementData = useCallback(async () => {
+    if (!agreementId) return
     try {
       setLoading(true)
       const response = await fetch(`/api/agreements/${agreementId}/sign`)
@@ -61,12 +58,19 @@ export default function AgreementSigningPage() {
       } else {
         setError('Failed to load agreement')
       }
-    } catch (error) {
+    } catch (error) { 
       console.error('Error loading agreement:', error)
       setError('Failed to load agreement')
     } finally {
       setLoading(false)
     }
+  }, [agreementId])
+
+  useEffect(() => {
+    loadAgreementData()
+  }, [loadAgreementData])
+
+  const oldLoad = async () => {
   }
 
   const initiateDocuSignSigning = async () => {

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -63,15 +63,7 @@ export default function AgreementTrackingPage() {
   const [sortBy, setSortBy] = useState<string>('sentDate')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
 
-  useEffect(() => {
-    loadAgreements()
-  }, [])
-
-  useEffect(() => {
-    filterAndSortAgreements()
-  }, [agreements, searchTerm, statusFilter, propertyFilter, sortBy, sortOrder])
-
-  const loadAgreements = async () => {
+  const loadAgreements = useCallback(async () => {
     try {
       setLoading(true)
       const response = await fetch('/api/agreements/track')
@@ -87,9 +79,9 @@ export default function AgreementTrackingPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
-  const filterAndSortAgreements = () => {
+  const filterAndSortAgreements = useCallback(() => {
     const filtered = agreements.filter(agreement => {
       const matchesSearch = 
         agreement.prospectName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -141,7 +133,19 @@ export default function AgreementTrackingPage() {
     })
 
     setFilteredAgreements(filtered)
+  }, [agreements, searchTerm, statusFilter, propertyFilter, sortBy, sortOrder])
+
+  useEffect(() => {
+    loadAgreements()
+  }, [loadAgreements])
+
+  useEffect(() => {
+    filterAndSortAgreements()
+  }, [filterAndSortAgreements])
+
+  const oldLoad = async () => {
   }
+
 
   const getStatusIcon = (status: string) => {
     switch (status.toLowerCase()) {

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { Room } from '@/lib/db/models/room'
 import { Button } from '@/components/ui/button'
@@ -49,13 +49,42 @@ export default function EditRoomPage() {
 
   const { register, handleSubmit, control, setValue, watch, formState: { errors } } = useForm<RoomFormData>()
 
-  useEffect(() => {
-    if (roomId) {
-      fetchRoom()
-    }
-  }, [roomId])
+  const fetchRoom = useCallback(async () => {
+    if (!roomId) return
+    try {
+      setLoading(true)
+      const response = await fetch(`/api/rooms/${roomId}`)
+      
+      if (!response.ok) {
+        throw new Error('Room not found')
+      }
+      
+      const data = await response.json()
+      const roomData = data.room
+      setRoom(roomData)
 
-  const fetchRoom = async () => {
+      // Populate form with existing data
+      setValue('number', roomData.number)
+      setValue('type', roomData.type)
+      setValue('size', roomData.size)
+      setValue('features', roomData.features)
+      setValue('monthlyRent', roomData.monthlyRent)
+      setValue('deposit', roomData.deposit)
+      setValue('isAvailable', roomData.isAvailable)
+      setValue('condition', roomData.condition)
+
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load room')
+    } finally {
+      setLoading(false)
+    }
+  }, [roomId, setValue])
+
+  useEffect(() => {
+    fetchRoom()
+  }, [fetchRoom])
+
+  const onSubmit = async (data: RoomFormData) => {
     try {
       setLoading(true)
       const response = await fetch(`/api/rooms/${roomId}`)

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams } from 'next/navigation'
 import { Room } from '@/lib/db/models/room'
 import { OccupancyRecord } from '@/lib/db/models/room'
@@ -35,13 +35,41 @@ export default function RoomDetailPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    if (roomId) {
-      fetchRoomData()
+  const fetchRoomData = useCallback(async () => {
+    if (!roomId) return
+    try {
+      setLoading(true)
+      
+      // Fetch room and occupancy history in parallel
+      const [roomRes, occupancyRes] = await Promise.all([
+        fetch(`/api/rooms/${roomId}`),
+        fetch(`/api/rooms/${roomId}/occupancy`)
+      ])
+
+      if (!roomRes.ok) {
+        throw new Error('Room not found')
+      }
+
+      const roomData = await roomRes.json()
+      setRoom(roomData.room)
+
+      if (occupancyRes.ok) {
+        const occupancyData = await occupancyRes.json()
+        setOccupancyHistory(occupancyData.occupancyHistory || [])
+      }
+
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load room data')
+    } finally {
+      setLoading(false)
     }
   }, [roomId])
 
-  const fetchRoomData = async () => {
+  useEffect(() => {
+    fetchRoomData()
+  }, [fetchRoomData])
+
+  const handleToggleAvailability = async () => {
     try {
       setLoading(true)
       

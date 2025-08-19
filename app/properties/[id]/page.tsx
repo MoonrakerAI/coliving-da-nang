@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams } from 'next/navigation'
 import { Property } from '@/lib/db/models/property'
 import { Room } from '@/lib/db/models/room'
@@ -33,13 +33,48 @@ export default function PropertyDetailPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    if (propertyId) {
-      fetchPropertyData()
+  const fetchPropertyData = useCallback(async () => {
+    if (!propertyId) return
+
+    try {
+      setLoading(true)
+      
+      // Fetch property, rooms, and analytics in parallel
+      const [propertyRes, roomsRes, analyticsRes] = await Promise.all([
+        fetch(`/api/properties/${propertyId}`),
+        fetch(`/api/properties/${propertyId}/rooms`),
+        fetch(`/api/properties/${propertyId}/analytics`)
+      ])
+
+      if (!propertyRes.ok) {
+        throw new Error('Property not found')
+      }
+
+      const propertyData = await propertyRes.json()
+      setProperty(propertyData.property)
+
+      if (roomsRes.ok) {
+        const roomsData = await roomsRes.json()
+        setRooms(roomsData.rooms || [])
+      }
+
+      if (analyticsRes.ok) {
+        const analyticsData = await analyticsRes.json()
+        setAnalytics(analyticsData.analytics)
+      }
+
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load property data')
+    } finally {
+      setLoading(false)
     }
   }, [propertyId])
 
-  const fetchPropertyData = async () => {
+  useEffect(() => {
+    fetchPropertyData()
+  }, [fetchPropertyData])
+
+  const onUpdate = async () => {
     try {
       setLoading(true)
       
