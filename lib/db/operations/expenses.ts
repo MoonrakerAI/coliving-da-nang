@@ -56,7 +56,7 @@ export async function createExpense(input: CreateExpenseInput): Promise<Expense>
     const propertyExpensesKey = getPropertyExpensesKey(expense.propertyId)
     const userExpensesKey = getUserExpensesKey(expense.userId)
     const allExpensesKey = getAllExpensesKey()
-    const categoryKey = getExpensesByCategoryKey(expense.category)
+    const categoryKey = getExpensesByCategoryKey(expense.category || 'uncategorized')
 
     // Use pipeline for atomic operations
     const pipeline = db.pipeline()
@@ -126,18 +126,18 @@ export async function getExpense(id: string): Promise<Expense | null> {
     // Parse stored data back to proper types
     const expense = {
       ...data,
-      amountCents: parseInt(data.amountCents),
+      amountCents: parseInt(data.amountCents as string),
       needsReimbursement: data.needsReimbursement === 'true',
       isReimbursed: data.isReimbursed === 'true',
       isTaxDeductible: data.isTaxDeductible === 'true',
-      createdAt: new Date(data.createdAt),
-      updatedAt: new Date(data.updatedAt),
-      expenseDate: new Date(data.expenseDate),
-      reimbursedDate: data.reimbursedDate ? new Date(data.reimbursedDate) : undefined,
-      receiptPhotos: data.receiptPhotos ? JSON.parse(data.receiptPhotos) : [],
-      location: data.location ? JSON.parse(data.location) : undefined,
-      categorySelection: data.categorySelection ? JSON.parse(data.categorySelection) : { categoryId: data.category || 'other' },
-      propertyAllocation: data.propertyAllocation ? JSON.parse(data.propertyAllocation) : undefined
+      createdAt: new Date(data.createdAt as string),
+      updatedAt: new Date(data.updatedAt as string),
+      expenseDate: new Date(data.expenseDate as string),
+      reimbursedDate: data.reimbursedDate ? new Date(data.reimbursedDate as string) : undefined,
+      receiptPhotos: data.receiptPhotos ? JSON.parse(data.receiptPhotos as string) : [],
+      location: data.location ? JSON.parse(data.location as string) : undefined,
+      categorySelection: data.categorySelection ? JSON.parse(data.categorySelection as string) : { categoryId: data.category || 'other' },
+      propertyAllocation: data.propertyAllocation ? JSON.parse(data.propertyAllocation as string) : undefined
     }
 
     return ExpenseSchema.parse(expense)
@@ -174,7 +174,7 @@ export async function updateExpense(input: UpdateExpenseInput): Promise<Expense 
     
     // Handle category changes
     if (updates.category && updates.category !== existingExpense.category) {
-      const oldCategoryKey = getExpensesByCategoryKey(existingExpense.category)
+      const oldCategoryKey = getExpensesByCategoryKey(existingExpense.category || 'uncategorized')
       const newCategoryKey = getExpensesByCategoryKey(updates.category)
       
       const pipeline = db.pipeline()
@@ -424,7 +424,7 @@ export async function getEnhancedCategorySuggestions(
     const mlSuggestions = await getMLCategorySuggestions(
       merchantName,
       description,
-      receiptText.trim(),
+      receiptText.trim() as string,
       propertyId
     )
     

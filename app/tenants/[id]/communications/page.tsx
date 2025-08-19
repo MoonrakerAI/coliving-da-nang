@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { Communication, CommunicationTemplate } from '@/lib/db/models/communication';
+import { Communication, CommunicationTemplate, CommunicationStatus, CommunicationDirection, CommunicationSource } from '@/lib/db/models/communication';
 import CommunicationLog from '@/components/communications/CommunicationLog';
 import NoteEditor from '@/components/communications/NoteEditor';
 import IssueTracker from '@/components/communications/IssueTracker';
@@ -352,10 +352,12 @@ export default function TenantCommunicationsPage() {
                   timestamp: new Date(),
                   duration: note.duration,
                   priority: note.priority,
-                  status: 'Open',
+                  status: CommunicationStatus.OPEN,
                   createdBy: '',
                   attachments: [],
-                  tags: note.tags
+                  tags: note.tags,
+                  direction: CommunicationDirection.OUTGOING,
+                  source: CommunicationSource.MANUAL
                 });
                 setShowNoteEditor(false);
               }}

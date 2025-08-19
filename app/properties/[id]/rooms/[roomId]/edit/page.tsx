@@ -86,36 +86,6 @@ export default function EditRoomPage() {
 
   const onSubmit = async (data: RoomFormData) => {
     try {
-      setLoading(true)
-      const response = await fetch(`/api/rooms/${roomId}`)
-      
-      if (!response.ok) {
-        throw new Error('Room not found')
-      }
-      
-      const data = await response.json()
-      const roomData = data.room
-      setRoom(roomData)
-
-      // Populate form with existing data
-      setValue('number', roomData.number)
-      setValue('type', roomData.type)
-      setValue('size', roomData.size)
-      setValue('features', roomData.features)
-      setValue('monthlyRent', roomData.monthlyRent)
-      setValue('deposit', roomData.deposit)
-      setValue('isAvailable', roomData.isAvailable)
-      setValue('condition', roomData.condition)
-
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load room')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const onSubmit = async (data: RoomFormData) => {
-    try {
       setSaving(true)
       setError(null)
       

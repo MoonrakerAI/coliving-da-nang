@@ -69,6 +69,8 @@ export const AuditLogSchema = z.object({
 export const CreateAuditLogSchema = AuditLogSchema.omit({
   id: true,
   timestamp: true
+}).partial({
+  severity: true
 })
 
 // Audit log query schema

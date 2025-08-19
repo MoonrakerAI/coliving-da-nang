@@ -39,15 +39,15 @@ export async function GET(request: NextRequest) {
     for (const propertyId of propertyIds) {
       const taskIds = await kv.smembers(`property:${propertyId}:tasks`)
       for (const taskId of taskIds) {
-        const task = await kv.hgetall(`task:${taskId}`)
+        const task = await kv.hgetall(`task:${taskId}`) as any
         if (task && !task.deletedAt) {
           allTasks.push({
             ...task,
             id: taskId,
-            createdAt: new Date(task.createdAt),
-            updatedAt: new Date(task.updatedAt),
-            dueDate: task.dueDate ? new Date(task.dueDate) : undefined,
-            completedAt: task.completedAt ? new Date(task.completedAt) : undefined,
+            createdAt: new Date(task.createdAt as string),
+            updatedAt: new Date(task.updatedAt as string),
+            dueDate: task.dueDate ? new Date(task.dueDate as string) : undefined,
+            completedAt: task.completedAt ? new Date(task.completedAt as string) : undefined,
             assignedTo: JSON.parse(task.assignedTo || '[]'),
             completionPhotos: JSON.parse(task.completionPhotos || '[]'),
             recurrence: task.recurrence ? JSON.parse(task.recurrence) : undefined,
@@ -90,7 +90,7 @@ export async function GET(request: NextRequest) {
     })
 
     // Calculate user metrics
-    for (const [userId, tasks] of userTasks.entries()) {
+    userTasks.forEach((tasks, userId) => {
       const userCompleted = tasks.filter(t => t.status === TaskStatus.COMPLETED)
       const userOverdue = tasks.filter(t => t.status === TaskStatus.OVERDUE)
       
@@ -119,7 +119,7 @@ export async function GET(request: NextRequest) {
         overdueCount: userOverdue.length,
         qualityRating: userQualityRating
       }
-    }
+    })
 
     // Calculate metrics by category
     const tasksByCategory: Record<TaskCategory, CategoryMetrics> = {} as Record<TaskCategory, CategoryMetrics>

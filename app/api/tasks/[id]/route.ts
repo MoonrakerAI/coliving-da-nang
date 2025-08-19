@@ -36,7 +36,7 @@ export async function GET(
       return NextResponse.json({ error: 'Task not found' }, { status: 404 })
     }
 
-    const task = await kv.get(taskKeys[0])
+    const task = await kv.get(taskKeys[0]) as any
     
     if (!task || task.deletedAt) {
       return NextResponse.json({ error: 'Task not found' }, { status: 404 })
@@ -86,7 +86,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'Task not found' }, { status: 404 })
     }
 
-    const existingTask = await kv.get(taskKeys[0])
+    const existingTask = await kv.get(taskKeys[0]) as any
     
     if (!existingTask || existingTask.deletedAt) {
       return NextResponse.json({ error: 'Task not found' }, { status: 404 })
@@ -159,7 +159,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Task not found' }, { status: 404 })
     }
 
-    const existingTask = await kv.get(taskKeys[0])
+    const existingTask = await kv.get(taskKeys[0]) as any
     
     if (!existingTask || existingTask.deletedAt) {
       return NextResponse.json({ error: 'Task not found' }, { status: 404 })

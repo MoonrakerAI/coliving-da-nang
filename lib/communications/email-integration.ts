@@ -1,5 +1,5 @@
 import { Resend } from 'resend';
-import { Communication, CommunicationType } from '@/lib/db/models/communication';
+import { Communication, CommunicationType, CommunicationStatus, CommunicationDirection, CommunicationSource, CommunicationPriority } from '@/lib/db/models/communication';
 import { CommunicationOperations } from '@/lib/db/operations/communications';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -72,10 +72,12 @@ export class EmailIntegration {
           content: `Email sent successfully to ${tenantEmail}\n\nOriginal message:\n${communication.content}`,
           timestamp: new Date(),
           priority: communication.priority,
-          status: 'Closed',
+          status: CommunicationStatus.CLOSED,
           createdBy: communication.createdBy,
           tags: [...communication.tags, 'email-sent'],
-          attachments: []
+          attachments: [],
+          direction: CommunicationDirection.OUTGOING,
+          source: CommunicationSource.MANUAL
         });
       } catch (error) {
         console.error('Failed to log email communication:', error);
@@ -207,11 +209,13 @@ Sent: ${new Date().toLocaleString()}
         subject: `Incoming Email: ${subject}`,
         content: `From: ${from}\n\n${content}`,
         timestamp: new Date(),
-        priority: 'Medium',
-        status: 'Open',
+        priority: CommunicationPriority.MEDIUM,
+        status: CommunicationStatus.OPEN,
         createdBy: 'system',
         tags: ['incoming-email'],
-        attachments: []
+        attachments: [],
+        direction: CommunicationDirection.INCOMING,
+        source: CommunicationSource.TENANT_REPLY
       });
 
       return communication;
@@ -245,11 +249,13 @@ Sent: ${new Date().toLocaleString()}
             subject: `Bulk Email: ${template.subject}`,
             content: `Bulk email sent to ${recipient.email}\n\n${template.text || 'HTML email sent'}`,
             timestamp: new Date(),
-            priority: 'Medium',
-            status: 'Closed',
+            priority: CommunicationPriority.MEDIUM,
+            status: CommunicationStatus.CLOSED,
             createdBy: 'system',
             tags: ['bulk-email'],
-            attachments: []
+            attachments: [],
+            direction: CommunicationDirection.OUTGOING,
+            source: CommunicationSource.MANUAL
           });
         } catch (error) {
           console.error('Failed to log bulk email communication:', error);

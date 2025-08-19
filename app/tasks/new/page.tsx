@@ -27,7 +27,7 @@ export default function NewTaskPage() {
 
   const fetchAvailableUsers = async () => {
     try {
-      const propertyId = session?.user?.propertyId
+      const propertyId = session?.user?.propertyIds?.[0]
       if (!propertyId) return
 
       // Fetch tenants and managers for the property
@@ -86,7 +86,7 @@ export default function NewTaskPage() {
       setIsLoading(true)
       setError(null)
 
-      const propertyId = session?.user?.propertyId
+      const propertyId = session?.user?.propertyIds?.[0]
       if (!propertyId) {
         throw new Error('No property associated with your account')
       }

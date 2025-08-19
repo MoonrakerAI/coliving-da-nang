@@ -39,7 +39,8 @@ export async function GET(request: NextRequest) {
 
     if (templateKeys.length > 0) {
       const templateData = await kv.mget(...templateKeys)
-      for (const template of templateData) {
+      for (const templateId of templateKeys) {
+        const template = await kv.hgetall(templateId) as any
         if (template) {
           // Include public templates or templates created by the user
           if (template.isPublic || template.createdBy === session.user.id) {
@@ -107,7 +108,10 @@ export async function POST(request: NextRequest) {
       category: validatedData.category,
       priority: validatedData.priority,
       estimatedDuration: validatedData.estimatedDuration,
-      defaultRecurrence: validatedData.defaultRecurrence,
+      defaultRecurrence: validatedData.defaultRecurrence ? {
+        ...validatedData.defaultRecurrence,
+        endDate: validatedData.defaultRecurrence.endDate ? new Date(validatedData.defaultRecurrence.endDate) : undefined
+      } : undefined,
       isPublic: validatedData.isPublic,
       createdBy: session.user.id,
       usageCount: 0,

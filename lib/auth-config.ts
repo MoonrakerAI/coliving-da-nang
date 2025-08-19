@@ -3,7 +3,7 @@ import { JWT } from 'next-auth/jwt'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import { authenticateUser } from './db/operations/user'
 import { LoginSchema } from './db/models/user'
-import { UserRole } from './db/models/user'
+import { UserRole, UserRoleType } from './db/models/user'
 export { UserRole }
 
 // Extend the built-in session types
@@ -11,7 +11,7 @@ declare module 'next-auth' {
   interface Session {
     user: {
       id: string
-      role: UserRole
+      role: UserRoleType
       propertyIds: string[]
     } & Omit<User, 'role'>
   }
@@ -21,7 +21,7 @@ declare module 'next-auth' {
     email?: string | null
     name?: string | null
     image?: string | null
-    role: UserRole
+    role: UserRoleType
     propertyIds: string[]
   }
 }
@@ -29,7 +29,7 @@ declare module 'next-auth' {
 declare module 'next-auth/jwt' {
   interface JWT {
     id: string
-    role: UserRole
+    role: UserRoleType
     propertyIds: string[]
   }
 }
@@ -70,7 +70,7 @@ export const authOptions: NextAuthOptions = {
             id: user.id,
             email: user.email,
             name: user.name,
-            role: user.role as UserRole,
+            role: user.role as UserRoleType,
             propertyIds: user.propertyIds
           }
         } catch (error) {

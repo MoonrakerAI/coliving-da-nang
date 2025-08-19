@@ -24,7 +24,7 @@ export async function POST(
       return NextResponse.json({ error: 'Task not found' }, { status: 404 })
     }
 
-    const existingTask = await kv.get(taskKeys[0])
+    const existingTask = await kv.get(taskKeys[0]) as any
     
     if (!existingTask || existingTask.deletedAt) {
       return NextResponse.json({ error: 'Task not found' }, { status: 404 })

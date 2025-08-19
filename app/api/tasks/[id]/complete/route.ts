@@ -32,7 +32,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'Task not found' }, { status: 404 })
     }
 
-    const existingTask = await kv.get(taskKeys[0])
+    const existingTask = await kv.get(taskKeys[0]) as any
     
     if (!existingTask || existingTask.deletedAt) {
       return NextResponse.json({ error: 'Task not found' }, { status: 404 })
@@ -74,7 +74,7 @@ export async function PATCH(
       createdAt: new Date(completedTask.createdAt),
       updatedAt: new Date(completedTask.updatedAt),
       dueDate: completedTask.dueDate ? new Date(completedTask.dueDate) : undefined,
-      completedAt: new Date(completedTask.completedAt)
+      completedAt: completedTask.completedAt ? new Date(completedTask.completedAt) : new Date()
     }
 
     return NextResponse.json({ 

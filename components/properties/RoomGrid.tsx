@@ -163,7 +163,7 @@ export function RoomGrid({ rooms, propertyId, onUpdate }: RoomGridProps) {
                 </CardTitle>
                 
                 <div className="flex items-center gap-2">
-                  {getAvailabilityIcon(room.isAvailable)}
+                  {getAvailabilityIcon(room.isAvailable ?? false)}
                   
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -173,7 +173,7 @@ export function RoomGrid({ rooms, propertyId, onUpdate }: RoomGridProps) {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem 
-                        onClick={() => handleToggleAvailability(room.id, room.isAvailable)}
+                        onClick={() => handleToggleAvailability(room.id, room.isAvailable ?? false)}
                       >
                         Mark as {room.isAvailable ? 'Occupied' : 'Available'}
                       </DropdownMenuItem>
@@ -194,7 +194,7 @@ export function RoomGrid({ rooms, propertyId, onUpdate }: RoomGridProps) {
 
               <div className="flex items-center gap-2 mt-2">
                 <Badge variant="outline">{room.type}</Badge>
-                <Badge className={getConditionColor(room.condition)}>
+                <Badge className={getConditionColor(room.condition || 'Good')}>
                   {room.condition}
                 </Badge>
                 <Badge variant={room.isAvailable ? "default" : "secondary"}>
@@ -230,7 +230,7 @@ export function RoomGrid({ rooms, propertyId, onUpdate }: RoomGridProps) {
               </div>
 
               {/* Room Features */}
-              {room.features.length > 0 && (
+              {room.features && room.features.length > 0 && (
                 <div>
                   <span className="text-sm text-gray-600 block mb-2">Features</span>
                   <div className="flex flex-wrap gap-1">

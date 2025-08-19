@@ -107,7 +107,7 @@ export class AgreementTemplateService {
   }
   
   // Clone template for modification
-  static async cloneTemplate(templateId: string, newName: string, propertyId?: string): Promise<AgreementTemplate> {
+  static async cloneTemplate(templateId: string, newName: string, propertyId?: string, createdBy: string = 'system'): Promise<AgreementTemplate> {
     try {
       const original = await getAgreementTemplate(templateId)
       if (!original) {
@@ -118,13 +118,12 @@ export class AgreementTemplateService {
         name: newName,
         propertyId: propertyId || original.propertyId,
         content: original.content,
-        variables: original.variables.map(variable => ({
-          ...variable,
-          id: uuidv4() // Generate new IDs for variables
-        })),
-        description: `Cloned from: ${original.name}`,
+        variables: original.variables,
+        description: original.description,
         category: original.category,
-        createdBy: original.createdBy
+        isActive: true,
+        version: 1,
+        createdBy: createdBy
       }
       
       return await this.createTemplate(cloneInput)
@@ -257,7 +256,7 @@ export class AgreementTemplateService {
     }
     
     // Return unique variable names
-    return [...new Set(matches)]
+    return Array.from(new Set(matches))
   }
 }
 

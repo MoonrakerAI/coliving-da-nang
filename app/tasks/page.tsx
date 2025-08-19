@@ -59,7 +59,7 @@ export default function TasksPage() {
   const fetchTasks = async () => {
     try {
       setLoading(true)
-      const propertyId = session?.user?.propertyId
+      const propertyId = session?.user?.propertyIds?.[0]
       
       if (!propertyId) {
         setError('No property associated with your account')

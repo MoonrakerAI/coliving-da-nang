@@ -57,12 +57,13 @@ export async function POST(
       prospectName: agreement.prospectName || '',
       prospectEmail: agreement.prospectEmail || '',
       propertyName: agreement.property?.name || '',
-      propertyAddress: agreement.property?.address || '',
+      propertyAddress: agreement.property?.address ? 
+        `${agreement.property.address.street}, ${agreement.property.address.city}, ${agreement.property.address.state} ${agreement.property.address.postalCode}` : 
+        '',
       agreementUrl: `${process.env.NEXT_PUBLIC_APP_URL}/agreements/sign/${agreement.id}`,
-      reminderNumber: (agreement.reminderCount || 0) + 1,
+      reminderNumber: (agreement.remindersSent || 0) + 1,
       daysUntilExpiration: daysUntilExpiry,
-      ownerName: agreement.property?.owner?.name,
-      ownerEmail: agreement.property?.owner?.email,
+      ownerId: agreement.property?.ownerId,
     }
 
     // Send reminder email
@@ -72,7 +73,7 @@ export async function POST(
     await updateAgreement({
       id: agreementId,
       lastReminderDate: now,
-      reminderCount: (agreement.reminderCount || 0) + 1,
+      remindersSent: (agreement.remindersSent || 0) + 1,
     })
 
     return NextResponse.json({

@@ -3,7 +3,7 @@ import { Agreement, AgreementTemplate } from '@/lib/db/models/agreement'
 import { Property } from '@/lib/db/models/property'
 
 // Email configuration (reuse existing transporter setup)
-const transporter = nodemailer.createTransporter({
+const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST || 'smtp.gmail.com',
   port: parseInt(process.env.SMTP_PORT || '587'),
   secure: false,

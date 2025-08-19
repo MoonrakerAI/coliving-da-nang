@@ -1,15 +1,19 @@
-import { kv } from '@vercel/kv';
+import { kv } from '@vercel/kv'
 import { 
   Communication, 
-  CommunicationTemplate, 
+  CommunicationType,
+  CommunicationStatus,
+  CommunicationFilter,
   IssueEscalation,
+  CommunicationTemplate,
   CreateCommunicationInput,
   UpdateCommunicationInput,
   CreateTemplateInput,
   UpdateTemplateInput,
-  CommunicationFilter,
   CommunicationSchema,
   CommunicationTemplateSchema,
+  CreateCommunicationSchema,
+  UpdateCommunicationSchema,
   IssueEscalationSchema
 } from '../models/communication';
 
@@ -181,8 +185,9 @@ export class CommunicationOperations {
 
     // Update communication status to escalated
     await this.update(communicationId, { 
-      status: 'In Progress',
-      assignedTo: escalation.escalatedTo 
+      status: CommunicationStatus.IN_PROGRESS,
+      assignedTo: escalation.escalatedTo,
+      updatedAt: new Date()
     });
 
     return validatedEscalation;
@@ -200,6 +205,7 @@ export class TemplateOperations {
     const template: CommunicationTemplate = {
       ...input,
       id,
+      usageCount: 0,
       createdAt: new Date(),
       updatedAt: new Date()
     };
@@ -306,13 +312,13 @@ export class TemplateOperations {
   static async incrementUsage(id: string): Promise<void> {
     const template = await this.getById(id);
     if (template) {
-      await this.update(id, { usageCount: template.usageCount + 1 });
+      await this.update(id, { usageCount: template.usageCount + 1, updatedAt: new Date() });
     }
   }
 
   static async getCategories(): Promise<string[]> {
     const templates = await this.getAll(true);
-    const categories = [...new Set(templates.map(tmpl => tmpl.category))];
+    const categories = Array.from(new Set(templates.map(tmpl => tmpl.category)));
     return categories.sort();
   }
 }

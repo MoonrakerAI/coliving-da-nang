@@ -105,10 +105,10 @@ export async function getCategory(categoryId: string): Promise<Category | null> 
     const category = {
       ...data,
       isCustom: data.isCustom === 'true',
-      usageCount: parseInt(data.usageCount) || 0,
-      createdAt: data.createdAt ? new Date(data.createdAt) : undefined,
-      lastUsed: data.lastUsed ? new Date(data.lastUsed) : undefined,
-      subcategories: data.subcategories ? JSON.parse(data.subcategories) : []
+      usageCount: parseInt(data.usageCount as string) || 0,
+      createdAt: data.createdAt ? new Date(data.createdAt as string) : undefined,
+      lastUsed: data.lastUsed ? new Date(data.lastUsed as string) : undefined,
+      subcategories: data.subcategories ? JSON.parse(data.subcategories as string) : []
     }
 
     return CategorySchema.parse(category)
@@ -202,7 +202,7 @@ export async function trackCategoryUsage(
     if (categoryId.startsWith('custom-')) {
       const categoryKey = getCategoryKey(categoryId)
       pipeline.hincrby(categoryKey, 'usageCount', 1)
-      pipeline.hset(categoryKey, 'lastUsed', validatedUsage.usedAt.toISOString())
+      pipeline.hset(categoryKey, { lastUsed: validatedUsage.usedAt.toISOString() })
     }
     
     await pipeline.exec()
@@ -234,13 +234,14 @@ async function getCategoryUsageData(categoryId: string, propertyId?: string): Pr
         
         return {
           ...data,
-          expenseAmount: parseInt(data.expenseAmount),
-          usedAt: new Date(data.usedAt)
+          expenseAmount: parseInt(data.expenseAmount as string),
+          usedAt: new Date(data.usedAt as string),
+          propertyId: data.propertyId as string
         }
       })
     )
 
-    const validRecords = usageRecords.filter(record => record !== null)
+    const validRecords = usageRecords.filter(record => record !== null) as NonNullable<typeof usageRecords[0]>[]
     
     // Filter by property if specified
     const filteredRecords = propertyId 

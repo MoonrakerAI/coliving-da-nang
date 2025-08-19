@@ -56,14 +56,14 @@ export async function GET(request: NextRequest) {
     if (taskKeys.length > 0) {
       const taskData = await kv.mget(...taskKeys)
       for (const task of taskData) {
-        if (task && !task.deletedAt) {
+        if (task && !(task as any).deletedAt) {
           tasks.push({
-            ...task,
-            createdAt: new Date(task.createdAt),
-            updatedAt: new Date(task.updatedAt),
-            dueDate: task.dueDate ? new Date(task.dueDate) : undefined,
-            completedAt: task.completedAt ? new Date(task.completedAt) : undefined
-          })
+            ...(task as any),
+            createdAt: new Date((task as any).createdAt),
+            updatedAt: new Date((task as any).updatedAt),
+            dueDate: (task as any).dueDate ? new Date((task as any).dueDate) : undefined,
+            completedAt: (task as any).completedAt ? new Date((task as any).completedAt) : undefined
+          } as Task)
         }
       }
     }
@@ -129,7 +129,7 @@ export async function POST(request: NextRequest) {
     const validatedData = createTaskSchema.parse(body)
 
     // Get property ID from request or user session
-    const propertyId = body.propertyId || session.user.propertyId
+    const propertyId = body.propertyId || session.user.propertyIds[0]
     if (!propertyId) {
       return NextResponse.json({ error: 'Property ID is required' }, { status: 400 })
     }
@@ -160,7 +160,10 @@ export async function POST(request: NextRequest) {
       estimatedDuration: validatedData.estimatedDuration,
       status,
       completionPhotos: [],
-      recurrence: validatedData.recurrence,
+      recurrence: validatedData.recurrence ? {
+        ...validatedData.recurrence,
+        endDate: validatedData.recurrence.endDate ? new Date(validatedData.recurrence.endDate) : undefined
+      } : undefined,
       templateId: validatedData.templateId,
       createdAt: now,
       updatedAt: now

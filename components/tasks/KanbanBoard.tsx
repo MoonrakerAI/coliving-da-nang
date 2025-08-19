@@ -138,7 +138,7 @@ export function KanbanBoard({ tasks, onTaskMove, onTaskClick, wipLimits }: Kanba
         <CardHeader className="pb-2">
           <div className="flex items-start justify-between">
             <h4 className="font-medium text-sm leading-tight">{task.title}</h4>
-            <Badge className={`ml-2 ${priorityBadgeColors[task.priority]}`} size="sm">
+            <Badge className={`ml-2 ${priorityBadgeColors[task.priority]}`}>
               {task.priority}
             </Badge>
           </div>
@@ -150,7 +150,7 @@ export function KanbanBoard({ tasks, onTaskMove, onTaskClick, wipLimits }: Kanba
         <CardContent className="pt-0">
           <div className="space-y-2">
             {/* Category */}
-            <Badge className={categoryColors[task.category]} size="sm">
+            <Badge className={categoryColors[task.category]}>
               <TagIcon className="h-3 w-3 mr-1" />
               {task.category}
             </Badge>

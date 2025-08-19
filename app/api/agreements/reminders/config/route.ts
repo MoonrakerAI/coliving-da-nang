@@ -83,7 +83,7 @@ export async function PUT(request: NextRequest) {
     
     const updatedConfig = AutomatedReminderService.getConfig()
     
-    console.log(`Reminder configuration updated by user ${user.id}:`, updates)
+    console.log(`Reminder configuration updated:`, updates)
     
     return NextResponse.json({
       success: true,

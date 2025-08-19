@@ -102,7 +102,7 @@ export function PropertySettings({ property }: PropertySettingsProps) {
       </Card>
 
       {/* House Rules */}
-      {property.houseRules.length > 0 && (
+      {property.houseRules && property.houseRules.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">

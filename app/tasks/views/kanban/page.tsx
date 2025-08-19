@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Task, TaskStatus, TaskFiltersExtended, TaskSearchQuery, TaskSearchResult } from '@/types'
+import { Task, TaskStatus, TaskFilters as TaskFiltersType, TaskSortField, TaskFiltersExtended } from '@/types'
+import { TaskSearchQuery, TaskSearchResult } from '@/types'
 import { KanbanBoard } from '@/components/tasks/KanbanBoard'
 import { TaskFilters } from '@/components/tasks/TaskFilters'
 import { TaskSearch } from '@/components/tasks/TaskSearch'
@@ -25,12 +26,8 @@ export default function TaskKanbanView() {
   const [searchQuery, setSearchQuery] = useState('')
 
   // WIP limits for columns
-  const wipLimits = {
-    [TaskStatus.PENDING]: undefined,
-    [TaskStatus.IN_PROGRESS]: 5,
-    [TaskStatus.COMPLETED]: undefined,
-    [TaskStatus.OVERDUE]: undefined,
-    [TaskStatus.CANCELLED]: undefined
+  const wipLimits: Partial<Record<TaskStatus, number>> = {
+    [TaskStatus.IN_PROGRESS]: 5
   }
 
   // Load tasks
@@ -246,7 +243,7 @@ export default function TaskKanbanView() {
       {/* Filters */}
       <TaskFilters
         filters={filters}
-        sortBy="dueDate" as any
+        sortBy={TaskSortField.DUE_DATE}
         sortOrder="asc"
         onFiltersChange={setFilters}
         onSortChange={() => {}} // Not used in kanban view
@@ -259,7 +256,7 @@ export default function TaskKanbanView() {
           tasks={filteredTasks}
           onTaskMove={handleTaskMove}
           onTaskClick={handleTaskClick}
-          wipLimits={wipLimits}
+          wipLimits={wipLimits as Record<TaskStatus, number>}
         />
       </div>
 

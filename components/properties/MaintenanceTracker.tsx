@@ -282,13 +282,13 @@ export function MaintenanceTracker({
                   </div>
                   
                   <div className="flex items-center gap-2">
-                    <Badge className={getPriorityColor(record.priority)}>
+                    <Badge className={getPriorityColor(record.priority || 'Medium')}>
                       {record.priority === 'Urgent' && <AlertTriangle className="h-3 w-3 mr-1" />}
                       {record.priority}
                     </Badge>
-                    <Badge className={getStatusColor(record.status)}>
-                      {getStatusIcon(record.status)}
-                      <span className="ml-1">{record.status}</span>
+                    <Badge className={getStatusColor(record.status || 'Open')}>
+                      {getStatusIcon(record.status || 'Open')}
+                      <span className="ml-1">{record.status || 'Open'}</span>
                     </Badge>
                   </div>
                 </div>

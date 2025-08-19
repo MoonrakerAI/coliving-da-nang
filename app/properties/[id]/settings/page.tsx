@@ -102,34 +102,6 @@ export default function PropertySettingsPage() {
 
   const onSubmit = async (data: PropertyFormData) => {
     try {
-      setLoading(true)
-      const response = await fetch(`/api/properties/${propertyId}`)
-      
-      if (!response.ok) {
-        throw new Error('Property not found')
-      }
-      
-      const data = await response.json()
-      const prop = data.property
-      setProperty(prop)
-
-      // Populate form with existing data
-      setValue('name', prop.name)
-      setValue('address', prop.address)
-      setValue('roomCount', prop.roomCount)
-      setValue('settings', prop.settings)
-      setValue('houseRules', prop.houseRules)
-      setValue('isActive', prop.isActive)
-
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load property')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const onSubmit = async (data: PropertyFormData) => {
-    try {
       setSaving(true)
       
       const response = await fetch(`/api/properties/${propertyId}`, {

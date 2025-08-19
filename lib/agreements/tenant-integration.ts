@@ -70,7 +70,7 @@ export class TenantProfileIntegrationService {
       await updateAgreement({
         id: agreement.id,
         tenantId: tenant.id,
-        tenantCreatedDate: new Date()
+        tenantCreated: true
       })
 
       // Store signed document if available
@@ -157,36 +157,35 @@ export class TenantProfileIntegrationService {
           endDate: leaseEndDate,
           monthlyRentCents,
           depositCents,
-          roomNumber: agreementData.roomNumber || agreement.roomNumber,
-          status: 'Active',
-          agreementId: agreement.id,
-          signedDate: agreement.signedDate || new Date(),
-          notes: agreementData.specialTerms || agreement.notes
+          isActive: true,
+          renewalNotificationSent: false,
+          expirationAlertSent: false
         }],
         
         // Emergency contact
-        emergencyContacts: emergencyContact ? [emergencyContact] : [],
+        emergencyContacts: emergencyContact ? [{
+          id: crypto.randomUUID(),
+          name: emergencyContact.name,
+          relationship: emergencyContact.relationship,
+          phone: emergencyContact.phone,
+          email: emergencyContact.email,
+          isPrimary: true,
+          verified: false,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        }] : [],
         
         // Documents
         documents: [{
           id: crypto.randomUUID(),
-          type: 'lease_agreement',
-          name: 'Signed Lease Agreement',
-          url: agreement.signedDocumentPath || '',
-          uploadDate: agreement.signedDate || new Date(),
-          agreementId: agreement.id
+          type: 'Lease',
+          filename: 'Signed Lease Agreement',
+          url: agreement.signedDocumentUrl || '',
+          uploadDate: agreement.signedDate || new Date()
         }],
         
-        // Communication history
-        communicationHistory: [{
-          id: crypto.randomUUID(),
-          type: 'agreement_signed',
-          subject: 'Lease Agreement Signed',
-          content: `Lease agreement signed on ${(agreement.signedDate || new Date()).toLocaleDateString()}`,
-          date: agreement.signedDate || new Date(),
-          direction: 'system',
-          agreementId: agreement.id
-        }],
+        // Communication history (just UUIDs)
+        communicationHistory: [],
         
         // Timestamps
         createdAt: new Date(),

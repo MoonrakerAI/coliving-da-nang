@@ -127,7 +127,7 @@ export async function analyzeSpendingPatterns(
         })
       } else {
         // Add data for each category
-        for (const [catId, data] of categoryGroups) {
+        for (const [catId, data] of Array.from(categoryGroups)) {
           monthlyData.push({
             month: `${monthLabel}-${catId}`,
             amount: data.amount,
@@ -157,7 +157,7 @@ export async function analyzeSpendingPatterns(
     }
     
     // Analyze each category
-    for (const [catId, data] of categoryData) {
+    for (const [catId, data] of Array.from(categoryData)) {
       const pattern = await analyzeCategoryPattern(catId, data)
       patterns.push(pattern)
     }
@@ -252,7 +252,7 @@ function calculateTrend(values: number[]): SpendingPattern['trend'] {
 }
 
 // Detect seasonal patterns
-function detectSeasonality(data: { month: string; amount: number }[]): SeasonalTrend['seasonality'] & { seasonalityStrength: number } {
+function detectSeasonality(data: { month: string; amount: number }[]): { detected: boolean; period: 'monthly' | 'quarterly' | 'yearly'; peaks: string[]; valleys: string[]; seasonalityStrength: number } {
   if (data.length < 12) {
     return { detected: false, period: 'monthly', peaks: [], valleys: [], seasonalityStrength: 0 }
   }
@@ -376,7 +376,7 @@ export async function detectExpenseAnomalies(
       }
       
       // Store stats
-      for (const [categoryId, stats] of categoryTotals) {
+      for (const [categoryId, stats] of Array.from(categoryTotals)) {
         if (!categoryStats.has(categoryId)) {
           categoryStats.set(categoryId, { amounts: [], frequencies: [] })
         }

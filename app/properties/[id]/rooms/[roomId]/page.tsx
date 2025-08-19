@@ -70,35 +70,6 @@ export default function RoomDetailPage() {
   }, [fetchRoomData])
 
   const handleToggleAvailability = async () => {
-    try {
-      setLoading(true)
-      
-      // Fetch room and occupancy history in parallel
-      const [roomRes, occupancyRes] = await Promise.all([
-        fetch(`/api/rooms/${roomId}`),
-        fetch(`/api/rooms/${roomId}/occupancy`)
-      ])
-
-      if (!roomRes.ok) {
-        throw new Error('Room not found')
-      }
-
-      const roomData = await roomRes.json()
-      setRoom(roomData.room)
-
-      if (occupancyRes.ok) {
-        const occupancyData = await occupancyRes.json()
-        setOccupancyHistory(occupancyData.occupancyHistory || [])
-      }
-
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load room data')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleToggleAvailability = async () => {
     if (!room) return
 
     try {
@@ -185,8 +156,8 @@ export default function RoomDetailPage() {
         </div>
 
         <div className="flex items-center gap-2">
-          <Badge className={getConditionColor(room.condition)}>
-            {room.condition}
+          <Badge className={getConditionColor(room.condition || 'Good')}>
+            {room.condition || 'Good'}
           </Badge>
           <Badge variant={room.isAvailable ? "default" : "secondary"}>
             {room.isAvailable ? 'Available' : 'Occupied'}
@@ -261,8 +232,8 @@ export default function RoomDetailPage() {
                   </div>
                   <div>
                     <label className="text-sm font-medium text-gray-600">Condition</label>
-                    <Badge className={getConditionColor(room.condition)}>
-                      {room.condition}
+                    <Badge className={getConditionColor(room.condition || 'Good')}>
+                      {room.condition || 'Good'}
                     </Badge>
                   </div>
                 </div>
@@ -325,7 +296,7 @@ export default function RoomDetailPage() {
           </div>
 
           {/* Room Features */}
-          {room.features.length > 0 && (
+          {room.features && room.features.length > 0 && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -354,7 +325,7 @@ export default function RoomDetailPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {room.photos.length > 0 ? (
+              {room.photos && room.photos.length > 0 ? (
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   {room.photos.map((photo, index) => (
                     <div key={index} className="aspect-square bg-gray-100 rounded-lg flex items-center justify-center">

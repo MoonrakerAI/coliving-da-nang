@@ -63,11 +63,11 @@ export async function POST(request: NextRequest) {
         // In a real application, you would get the tenant's email from the database
         const tenantEmail = `tenant-${payment.tenantId}@example.com`
         
-        await sendEmail(
-          tenantEmail,
-          reminderSubject,
-          reminderBody
-        )
+        await sendEmail({
+          to: tenantEmail,
+          subject: reminderSubject,
+          text: reminderBody
+        })
 
         results.push({ paymentId, status: 'sent' })
         

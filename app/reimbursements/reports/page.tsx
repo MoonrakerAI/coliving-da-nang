@@ -216,10 +216,7 @@ export default function ReimbursementReportsPage() {
             </CardHeader>
             <CardContent>
               <ReimbursementList 
-                reimbursements={filteredReimbursements}
-                loading={loading}
                 showFilters={false}
-                showPagination={true}
               />
             </CardContent>
           </Card>

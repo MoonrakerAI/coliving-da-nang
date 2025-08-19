@@ -458,30 +458,22 @@ export default function TenantProfile() {
             <CardContent>
               {tenant.communicationHistory && tenant.communicationHistory.length > 0 ? (
                 <div className="space-y-4">
-                  {tenant.communicationHistory.map((comm) => (
-                    <div key={comm.id} className="border rounded-lg p-4">
+                  {tenant.communicationHistory.map((commId) => (
+                    <div key={commId} className="border rounded-lg p-4">
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
-                          <Badge variant="outline">{comm.type}</Badge>
-                          {comm.subject && (
-                            <span className="font-medium">{comm.subject}</span>
-                          )}
+                          <Badge variant="outline">Communication</Badge>
+                          <Badge variant="secondary">Medium</Badge>
                         </div>
-                        <span className="text-sm text-muted-foreground">
-                          {formatDate(comm.timestamp)}
+                        <span className="text-sm text-gray-500">
+                          {new Date().toLocaleDateString()}
                         </span>
                       </div>
-                      <p className="text-sm mb-2">{comm.content}</p>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-muted-foreground">
-                          By {comm.createdBy}
-                        </span>
-                        {comm.resolved && (
-                          <Badge variant="secondary" className="text-xs">
-                            <CheckCircle className="mr-1 h-3 w-3" />
-                            Resolved
-                          </Badge>
-                        )}
+                      <h4 className="font-medium mb-1">Communication Record</h4>
+                      <p className="text-sm text-gray-600 mb-2">Communication ID: {commId}</p>
+                      <div className="flex items-center justify-between text-xs text-gray-500">
+                        <span>By: System</span>
+                        <Badge variant="secondary">Pending</Badge>
                       </div>
                     </div>
                   ))}

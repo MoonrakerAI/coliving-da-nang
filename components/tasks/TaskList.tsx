@@ -117,7 +117,6 @@ export function TaskList({
           <div className="col-span-1">
             <Checkbox
               checked={allSelected}
-              indeterminate={someSelected}
               onCheckedChange={(checked) => onSelectAll(!!checked)}
             />
           </div>

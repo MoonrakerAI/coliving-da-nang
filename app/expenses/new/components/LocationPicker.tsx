@@ -193,7 +193,7 @@ export function LocationPicker({ onLocationSelect }: LocationPickerProps) {
       lat: merchant.lat,
       lng: merchant.lng,
       address: merchant.address,
-      accuracy: locationAccuracy,
+      accuracy: locationAccuracy ?? undefined,
       timestamp: Date.now()
     }
     setCurrentLocation(location)

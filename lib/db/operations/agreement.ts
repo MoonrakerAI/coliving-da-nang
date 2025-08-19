@@ -200,7 +200,8 @@ async function createStatusHistory(
     newStatus: newStatus as any,
     timestamp: new Date(),
     notes,
-    triggeredBy: 'system'
+    triggeredBy: 'system',
+    metadata: {}
   }
   
   await kv.hset(`agreement_status_history:${id}`, history)
@@ -231,7 +232,7 @@ export function extractVariablesFromContent(content: string): string[] {
     matches.push(match[1])
   }
   
-  return [...new Set(matches)]
+  return Array.from(new Set(matches))
 }
 
 export function populateTemplateContent(content: string, variables: Record<string, any>): string {

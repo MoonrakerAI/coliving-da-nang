@@ -1,7 +1,7 @@
 'use client'
 
 import { Task, TaskPriority, TaskStatus } from '@/types'
-import { StatusBadge } from '@/components/ui/StatusBadge'
+import { Badge } from '@/components/ui/badge'
 import { format } from 'date-fns'
 import { Clock, User, Calendar, Camera, Star } from 'lucide-react'
 
@@ -38,15 +38,15 @@ export function TaskCard({
   const getStatusColor = (status: TaskStatus) => {
     switch (status) {
       case TaskStatus.COMPLETED:
-        return 'success'
+        return 'default'
       case TaskStatus.IN_PROGRESS:
-        return 'warning'
+        return 'secondary'
       case TaskStatus.OVERDUE:
-        return 'error'
+        return 'destructive'
       case TaskStatus.CANCELLED:
-        return 'neutral'
+        return 'outline'
       default:
-        return 'info'
+        return 'secondary'
     }
   }
 
@@ -70,7 +70,7 @@ export function TaskCard({
             <span className={`px-2 py-1 text-xs font-medium rounded-full border ${getPriorityColor(task.priority)}`}>
               {task.priority}
             </span>
-            <StatusBadge status={task.status} variant={getStatusColor(task.status)} />
+            <Badge variant={getStatusColor(task.status)}>{task.status}</Badge>
           </div>
         </div>
 

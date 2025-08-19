@@ -313,7 +313,7 @@ export default function PropertyDetailPage() {
           </div>
 
           {/* House Rules */}
-          {property.houseRules.length > 0 && (
+          {property.houseRules && property.houseRules.length > 0 && (
             <div className="bg-white p-6 rounded-lg border border-gray-200">
               <h3 className="text-lg font-semibold mb-4">House Rules</h3>
               <ul className="space-y-2">

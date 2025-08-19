@@ -128,7 +128,7 @@ export function ReimbursementReportFilters({
                   }}
                   disabled={(date) => 
                     date > new Date() || 
-                    (filters.dateFrom && date < filters.dateFrom)
+                    (filters.dateFrom ? date < filters.dateFrom : false)
                   }
                   initialFocus
                 />

@@ -34,7 +34,8 @@ export async function POST(
       escalatedFrom: session.user.id,
       escalatedTo: validatedInput.escalatedTo,
       reason: validatedInput.reason,
-      notes: validatedInput.notes
+      notes: validatedInput.notes,
+      resolved: false,
     });
 
     return NextResponse.json(escalation, { status: 201 });

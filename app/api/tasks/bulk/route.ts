@@ -91,13 +91,15 @@ export async function POST(request: NextRequest) {
       await kv.hmset(`task:${taskId}`, updates)
       
       // Get updated task for response
-      const updatedTask = await kv.hgetall(`task:${taskId}`)
-      updatedTasks.push({
-        ...updatedTask,
-        id: taskId,
-        assignedTo: JSON.parse(updatedTask.assignedTo || '[]'),
-        completionPhotos: JSON.parse(updatedTask.completionPhotos || '[]')
-      })
+      const updatedTask = await kv.hgetall(`task:${taskId}`) as any
+      if (updatedTask) {
+        updatedTasks.push({
+          ...updatedTask,
+          id: taskId,
+          assignedTo: JSON.parse(updatedTask.assignedTo || '[]'),
+          completionPhotos: JSON.parse(updatedTask.completionPhotos || '[]')
+        })
+      }
     }
 
     return NextResponse.json({

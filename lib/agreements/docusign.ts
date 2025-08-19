@@ -152,7 +152,7 @@ export class DocuSignService {
       this.accessToken = data.access_token
       this.tokenExpiry = new Date(Date.now() + (data.expires_in * 1000))
       
-      return this.accessToken
+      return this.accessToken!
     } catch (error) {
       console.error('Error getting DocuSign access token:', error)
       throw error

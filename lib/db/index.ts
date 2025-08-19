@@ -5,8 +5,8 @@ export * from './operations'
 // Re-export commonly used types
 export type { 
   Tenant, 
-  CreateTenant, 
-  UpdateTenant 
+  CreateTenantInput, 
+  UpdateTenantInput 
 } from './models/tenant'
 
 export type { 
@@ -17,14 +17,14 @@ export type {
 
 export type { 
   Expense, 
-  CreateExpense, 
-  UpdateExpense 
+  CreateExpenseInput, 
+  UpdateExpenseInput 
 } from './models/expense'
 
 export type { 
   Property, 
-  CreateProperty, 
-  UpdateProperty 
+  CreatePropertyInput, 
+  UpdatePropertyInput 
 } from './models/property'
 
 export type { 

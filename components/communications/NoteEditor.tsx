@@ -177,11 +177,11 @@ export default function NoteEditor({
             </Select>
 
             {/* Template Variables */}
-            {selectedTemplate && templates.find(t => t.id === selectedTemplate)?.variables.length > 0 && (
+            {selectedTemplate && templates?.find(t => t.id === selectedTemplate)?.variables && templates.find(t => t.id === selectedTemplate)!.variables.length > 0 && (
               <div className="space-y-3 p-4 bg-gray-50 rounded-lg">
                 <Label className="text-sm font-medium">Template Variables</Label>
                 <div className="grid grid-cols-2 gap-3">
-                  {templates.find(t => t.id === selectedTemplate)?.variables.map(variable => (
+                  {templates?.find(t => t.id === selectedTemplate)?.variables.map(variable => (
                     <div key={variable}>
                       <Label className="text-xs text-gray-600">{variable}</Label>
                       <Input

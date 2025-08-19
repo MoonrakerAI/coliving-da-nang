@@ -53,7 +53,7 @@ export function TaskFilters({
     onFiltersChange({ ...filters, [key]: value })
   }
 
-  const toggleArrayFilter = <T,>(
+  const toggleArrayFilter = <T extends string | TaskStatus | TaskCategory | TaskPriority>(
     key: keyof TaskFiltersExtended,
     value: T,
     currentArray: T[] = []
@@ -61,7 +61,7 @@ export function TaskFilters({
     const newArray = currentArray.includes(value)
       ? currentArray.filter(item => item !== value)
       : [...currentArray, value]
-    updateFilter(key, newArray.length > 0 ? newArray : undefined)
+    updateFilter(key, newArray.length > 0 ? newArray as any : undefined)
   }
 
   const getActiveFilterCount = () => {

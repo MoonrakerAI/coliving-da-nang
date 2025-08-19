@@ -110,7 +110,7 @@ export type ChangePassword = z.infer<typeof ChangePasswordSchema>
 // Helper functions
 export function isUserLocked(user: User): boolean {
   return user.status === UserStatus.LOCKED || 
-         (user.lockedUntil && user.lockedUntil > new Date())
+         (!!user.lockedUntil && user.lockedUntil > new Date())
 }
 
 export function shouldLockUser(failedAttempts: number): boolean {

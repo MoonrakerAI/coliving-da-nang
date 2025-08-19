@@ -9,7 +9,7 @@ import { Payment, PaymentStatus } from '@/lib/db/models/payment'
 import { Property } from '@/lib/db/models/property'
 import { Tenant } from '@/lib/db/models/tenant'
 
-interface PaymentFilters {
+interface PaymentFilterState {
   status: string
   search: string
   sortBy: string
@@ -19,15 +19,19 @@ interface PaymentFilters {
   propertyId: string
 }
 
+type EnrichedPayment = Payment & {
+  tenant: Tenant
+}
+
 export default function Dashboard() {
   const [payments, setPayments] = useState<Payment[]>([])
-  const [filteredPayments, setFilteredPayments] = useState<Payment[]>([])
+  const [filteredPayments, setFilteredPayments] = useState<EnrichedPayment[]>([])
   const [properties, setProperties] = useState<Property[]>([])
   const [tenants, setTenants] = useState<Tenant[]>([])
   const [selectedPayments, setSelectedPayments] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [filters, setFilters] = useState<PaymentFilters>({
+  const [filters, setFilters] = useState<PaymentFilterState>({
     status: 'all',
     search: '',
     sortBy: 'dueDate',
@@ -125,12 +129,12 @@ export default function Dashboard() {
     const enrichedPayments = filtered.map(payment => ({
       ...payment,
       tenant: tenants.find(t => t.id === payment.tenantId) || null
-    })).filter(p => p.tenant) // Ensure tenant exists
+    })).filter((p): p is EnrichedPayment => p.tenant !== null) // Ensure tenant exists
 
     setFilteredPayments(enrichedPayments)
   }, [payments, filters, tenants])
 
-  const handleFilterChange = (newFilters: Partial<PaymentFilters>) => {
+  const handleFilterChange = (newFilters: Partial<PaymentFilterState>) => {
     setFilters(prev => ({ ...prev, ...newFilters }))
   }
 
@@ -151,7 +155,7 @@ export default function Dashboard() {
       const response = await fetch(`/api/payments/${paymentId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status, paidDate: status === PaymentStatus.PAID ? new Date() : null })
+        body: JSON.stringify({ status, paidDate: status === 'PAID' ? new Date() : null })
       })
       if (response.ok) {
         await fetchPayments()
@@ -358,7 +362,7 @@ export default function Dashboard() {
       <QuickActions
         onExportPayments={handleExportPayments}
         onGenerateReport={handleGenerateReport}
-        onBulkAction={handleBulkAction}
+        onBulkReminders={() => handleBulkAction('sendReminders')}
         selectedCount={selectedPayments.length}
         totalPayments={stats.total}
       />
@@ -367,7 +371,6 @@ export default function Dashboard() {
       <PaymentFilters
         filters={filters}
         onFilterChange={(filter) => handleFilterChange(filter)}
-        onSort={(sortBy, sortOrder) => handleFilterChange({ sortBy, sortOrder })}
         properties={properties}
         onClearFilters={handleClearFilters}
         paymentCounts={{
@@ -385,7 +388,7 @@ export default function Dashboard() {
             key={payment.id}
             payment={payment}
             tenant={payment.tenant}
-            onStatusUpdate={(status) => handleStatusUpdate(payment.id, status)}
+            onStatusUpdate={(paymentId, status) => handleStatusUpdate(paymentId, status)}
             onSendReminder={() => handleSendReminder(payment.id)}
             onToggleReminders={handleToggleReminders}
             onViewDetails={() => { /* TODO: Implement modal view */ }}

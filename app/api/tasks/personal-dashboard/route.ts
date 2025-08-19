@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
     for (const propertyId of propertyIds) {
       const taskIds = await kv.smembers(`property:${propertyId}:tasks`)
       for (const taskId of taskIds) {
-        const task = await kv.hgetall(`task:${taskId}`)
+        const task = await kv.hgetall(`task:${taskId}`) as any
         if (task && !task.deletedAt) {
           const taskObj = {
             ...task,
@@ -152,7 +152,7 @@ export async function GET(request: NextRequest) {
         action: 'completed',
         timestamp: task.completedAt!,
         userId,
-        userName: userData.name || 'You',
+        userName: (userData as any).name || 'You',
         details: task.completionNotes
       })
     })

@@ -609,7 +609,7 @@ export function allocateToCostCenters(
           propertyName: `Property ${propertyId}`,
           percentage: percentagePerProperty,
           amount: Math.round(expense.amountCents * (percentagePerProperty / 100)),
-          allocationMethod: 'custom',
+          allocationMethod: 'percentage',
           justification: `Cost center: ${costCenter.name} (${rule.percentage}% split among ${propertiesInCenter} properties)`
         })
       }

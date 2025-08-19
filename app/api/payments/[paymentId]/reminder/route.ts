@@ -52,11 +52,11 @@ export async function POST(
     // In a real application, you would get the tenant's email from the database
     const tenantEmail = `tenant-${payment.tenantId}@example.com`
     
-    await sendEmail(
-      tenantEmail,
-      reminderSubject,
-      reminderBody
-    )
+    await sendEmail({
+      to: tenantEmail,
+      subject: reminderSubject,
+      text: reminderBody
+    })
 
     return NextResponse.json({ 
       message: 'Payment reminder sent successfully',

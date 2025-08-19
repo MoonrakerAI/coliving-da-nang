@@ -147,7 +147,7 @@ export class AutomatedReminderService {
       await updateAgreement({
         id: agreement.id,
         lastReminderDate: now,
-        reminderCount: (agreement.reminderCount || 0) + 1
+        remindersSent: (agreement.remindersSent || 0) + 1
       })
 
       console.log(`Sent ${reminderType} reminder for agreement ${agreement.id}`)
@@ -169,12 +169,20 @@ export class AutomatedReminderService {
     try {
       const signingUrl = `${process.env.NEXT_PUBLIC_APP_URL}/agreements/sign/${agreement.id}`
       
-      await AgreementNotificationService.sendReminderEmail(
-        agreement,
-        urgencyLevel,
-        signingUrl,
-        reminderType
-      )
+      await AgreementNotificationService.sendReminderEmail({
+        prospectName: agreement.prospectName,
+        prospectEmail: agreement.prospectEmail,
+        propertyName: agreement.property?.name || 'Property',
+        propertyAddress: typeof agreement.property?.address === 'string' 
+          ? agreement.property.address 
+          : agreement.property?.address 
+            ? `${agreement.property.address.street}, ${agreement.property.address.city}, ${agreement.property.address.state} ${agreement.property.address.postalCode}`
+            : '',
+        agreementUrl: signingUrl,
+        expirationDate: agreement.expirationDate,
+        reminderNumber: 1,
+        daysUntilExpiration: Math.ceil((agreement.expirationDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+      })
     } catch (error) {
       console.error('Error sending reminder email:', error)
       throw error
@@ -201,7 +209,7 @@ export class AutomatedReminderService {
         }
 
         // Skip if we've hit max attempts
-        const reminderCount = agreement.reminderCount || 0
+        const reminderCount = agreement.remindersSent || 0
         if (reminderCount >= this.config.maxAttempts) {
           return false
         }
@@ -222,7 +230,7 @@ export class AutomatedReminderService {
     daysSinceSent: number,
     daysUntilExpiry: number
   ): string | null {
-    const reminderCount = agreement.reminderCount || 0
+    const reminderCount = agreement.remindersSent || 0
 
     // Final reminder (1 day before expiry)
     if (daysUntilExpiry <= this.config.schedules.final && reminderCount < this.config.maxAttempts) {

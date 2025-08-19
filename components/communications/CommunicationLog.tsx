@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Communication, CommunicationType, CommunicationPriority, CommunicationStatus } from '@/lib/db/models/communication';
+import { Communication, CommunicationType, CommunicationPriority, CommunicationStatus, CommunicationDirection, CommunicationSource } from '@/lib/db/models/communication';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -94,8 +94,10 @@ export default function CommunicationLog({
       priority: newCommunication.priority,
       status: CommunicationStatus.OPEN,
       createdBy: '', // Will be set by API
-      attachments: newCommunication.attachments,
-      tags: newCommunication.tags
+      attachments: newCommunication.attachments || [],
+      tags: newCommunication.tags || [],
+      direction: CommunicationDirection.OUTGOING,
+      source: CommunicationSource.MANUAL
     });
 
     setNewCommunication({

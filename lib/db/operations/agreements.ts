@@ -61,11 +61,19 @@ export async function createAgreementTemplate(input: CreateAgreementTemplateInpu
     
     // Store template data as hash
     const templateData: Record<string, string> = {
-      ...validatedTemplate,
+      id: validatedTemplate.id,
+      name: validatedTemplate.name,
+      content: validatedTemplate.content,
+      propertyId: validatedTemplate.propertyId,
+      createdBy: validatedTemplate.createdBy,
+      category: validatedTemplate.category,
+      description: validatedTemplate.description || '',
+      legalReviewedBy: validatedTemplate.legalReviewedBy || '',
       createdAt: validatedTemplate.createdAt.toISOString(),
       updatedAt: validatedTemplate.updatedAt.toISOString(),
       legalReviewDate: validatedTemplate.legalReviewDate?.toISOString() || '',
-      variables: JSON.stringify(validatedTemplate.variables || []),
+      deletedAt: validatedTemplate.deletedAt?.toISOString() || '',
+      variables: JSON.stringify(validatedTemplate.variables),
       version: validatedTemplate.version.toString(),
       isActive: validatedTemplate.isActive.toString()
     }
@@ -108,12 +116,12 @@ export async function getAgreementTemplate(id: string): Promise<AgreementTemplat
     // Parse stored data back to proper types
     const template = {
       ...data,
-      createdAt: new Date(data.createdAt),
-      updatedAt: new Date(data.updatedAt),
-      legalReviewDate: data.legalReviewDate ? new Date(data.legalReviewDate) : undefined,
-      variables: data.variables ? JSON.parse(data.variables) : [],
-      version: parseInt(data.version),
-      isActive: data.isActive === 'true'
+      createdAt: new Date(data.createdAt as string),
+      updatedAt: new Date(data.updatedAt as string),
+      legalReviewDate: data.legalReviewDate ? new Date(data.legalReviewDate as string) : undefined,
+      variables: data.variables ? JSON.parse(data.variables as string) : [],
+      version: parseInt(data.version as string),
+      isActive: (data.isActive as string) === 'true'
     }
 
     return AgreementTemplateSchema.parse(template)
@@ -144,11 +152,19 @@ export async function updateAgreementTemplate(input: UpdateAgreementTemplateInpu
 
     // Store updated data
     const templateData: Record<string, string> = {
-      ...validatedTemplate,
+      id: validatedTemplate.id,
+      name: validatedTemplate.name,
+      content: validatedTemplate.content,
+      propertyId: validatedTemplate.propertyId,
+      createdBy: validatedTemplate.createdBy,
+      category: validatedTemplate.category,
+      description: validatedTemplate.description || '',
+      legalReviewedBy: validatedTemplate.legalReviewedBy || '',
       createdAt: validatedTemplate.createdAt.toISOString(),
       updatedAt: validatedTemplate.updatedAt.toISOString(),
       legalReviewDate: validatedTemplate.legalReviewDate?.toISOString() || '',
-      variables: JSON.stringify(validatedTemplate.variables || []),
+      deletedAt: validatedTemplate.deletedAt?.toISOString() || '',
+      variables: JSON.stringify(validatedTemplate.variables),
       version: validatedTemplate.version.toString(),
       isActive: validatedTemplate.isActive.toString()
     }
@@ -247,7 +263,18 @@ export async function createAgreement(input: CreateAgreementInput): Promise<Agre
     const pipeline = db.pipeline()
     
     const agreementData: Record<string, string> = {
-      ...validatedAgreement,
+      id: validatedAgreement.id,
+      templateId: validatedAgreement.templateId,
+      tenantId: validatedAgreement.tenantId || '',
+      propertyId: validatedAgreement.propertyId,
+      prospectEmail: validatedAgreement.prospectEmail,
+      prospectName: validatedAgreement.prospectName,
+      prospectPhone: validatedAgreement.prospectPhone || '',
+      status: validatedAgreement.status,
+      createdBy: validatedAgreement.createdBy,
+      docusignEnvelopeId: validatedAgreement.docusignEnvelopeId || '',
+      documentUrl: validatedAgreement.documentUrl || '',
+      signedDocumentUrl: validatedAgreement.signedDocumentUrl || '',
       createdAt: validatedAgreement.createdAt.toISOString(),
       updatedAt: validatedAgreement.updatedAt.toISOString(),
       sentDate: validatedAgreement.sentDate.toISOString(),
@@ -283,7 +310,8 @@ export async function createAgreement(input: CreateAgreementInput): Promise<Agre
       newStatus: agreement.status,
       timestamp: now,
       triggeredBy: 'system',
-      notes: 'Agreement created'
+      notes: 'Agreement created',
+      metadata: {}
     })
 
     return validatedAgreement
@@ -309,21 +337,21 @@ export async function getAgreement(id: string): Promise<Agreement | null> {
 
     const agreement = {
       ...data,
-      createdAt: new Date(data.createdAt),
-      updatedAt: new Date(data.updatedAt),
-      sentDate: new Date(data.sentDate),
-      viewedDate: data.viewedDate ? new Date(data.viewedDate) : undefined,
-      signedDate: data.signedDate ? new Date(data.signedDate) : undefined,
-      completedDate: data.completedDate ? new Date(data.completedDate) : undefined,
-      expirationDate: new Date(data.expirationDate),
-      lastReminderDate: data.lastReminderDate ? new Date(data.lastReminderDate) : undefined,
-      nextReminderDate: data.nextReminderDate ? new Date(data.nextReminderDate) : undefined,
-      leaseStartDate: data.leaseStartDate ? new Date(data.leaseStartDate) : undefined,
-      leaseEndDate: data.leaseEndDate ? new Date(data.leaseEndDate) : undefined,
-      agreementData: data.agreementData ? JSON.parse(data.agreementData) : {},
-      remindersSent: parseInt(data.remindersSent || '0'),
-      monthlyRentCents: data.monthlyRentCents ? parseInt(data.monthlyRentCents) : undefined,
-      depositCents: data.depositCents ? parseInt(data.depositCents) : undefined,
+      createdAt: new Date(data.createdAt as string),
+      updatedAt: new Date(data.updatedAt as string),
+      sentDate: new Date(data.sentDate as string),
+      viewedDate: data.viewedDate ? new Date(data.viewedDate as string) : undefined,
+      signedDate: data.signedDate ? new Date(data.signedDate as string) : undefined,
+      completedDate: data.completedDate ? new Date(data.completedDate as string) : undefined,
+      expirationDate: new Date(data.expirationDate as string),
+      lastReminderDate: data.lastReminderDate ? new Date(data.lastReminderDate as string) : undefined,
+      nextReminderDate: data.nextReminderDate ? new Date(data.nextReminderDate as string) : undefined,
+      leaseStartDate: data.leaseStartDate ? new Date(data.leaseStartDate as string) : undefined,
+      leaseEndDate: data.leaseEndDate ? new Date(data.leaseEndDate as string) : undefined,
+      agreementData: data.agreementData ? JSON.parse(data.agreementData as string) : {},
+      remindersSent: parseInt((data.remindersSent as string) || '0'),
+      monthlyRentCents: data.monthlyRentCents ? parseInt(data.monthlyRentCents as string) : undefined,
+      depositCents: data.depositCents ? parseInt(data.depositCents as string) : undefined,
       tenantCreated: data.tenantCreated === 'true'
     }
 
@@ -364,7 +392,18 @@ export async function updateAgreement(input: UpdateAgreementInput): Promise<Agre
     const agreementKey = getAgreementKey(validatedInput.id)
 
     const agreementData: Record<string, string> = {
-      ...validatedAgreement,
+      id: validatedAgreement.id,
+      templateId: validatedAgreement.templateId,
+      tenantId: validatedAgreement.tenantId || '',
+      propertyId: validatedAgreement.propertyId,
+      prospectEmail: validatedAgreement.prospectEmail,
+      prospectName: validatedAgreement.prospectName,
+      prospectPhone: validatedAgreement.prospectPhone || '',
+      status: validatedAgreement.status,
+      createdBy: validatedAgreement.createdBy,
+      docusignEnvelopeId: validatedAgreement.docusignEnvelopeId || '',
+      documentUrl: validatedAgreement.documentUrl || '',
+      signedDocumentUrl: validatedAgreement.signedDocumentUrl || '',
       createdAt: validatedAgreement.createdAt.toISOString(),
       updatedAt: validatedAgreement.updatedAt.toISOString(),
       sentDate: validatedAgreement.sentDate.toISOString(),
@@ -398,7 +437,8 @@ export async function updateAgreement(input: UpdateAgreementInput): Promise<Agre
         newStatus: updated.status,
         timestamp: new Date(),
         triggeredBy: 'system',
-        notes: `Status changed from ${existing.status} to ${updated.status}`
+        notes: `Agreement updated from ${existing.status} to ${updated.status}`,
+        metadata: {}
       })
     }
 

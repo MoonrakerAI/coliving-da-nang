@@ -81,8 +81,10 @@ export class AgreementSendingService {
         status: 'Sent',
         sentDate: new Date(),
         expirationDate,
-        agreementData: this.convertVariableValuesToRecord(request.variableValues),
-        createdBy
+        agreementData: {},
+        remindersSent: 0,
+        tenantCreated: false,
+        createdBy: 'system'
       }
 
       const agreement = await createAgreement(agreementInput)

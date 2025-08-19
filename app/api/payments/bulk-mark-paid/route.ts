@@ -12,7 +12,8 @@ export async function POST(request: Request) {
 
     const results = await Promise.allSettled(
       paymentIds.map(id => 
-        updatePayment(id, { 
+        updatePayment({ 
+          id,
           status: PaymentStatus.PAID, 
           paidDate: new Date() 
         })

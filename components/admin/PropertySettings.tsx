@@ -165,7 +165,7 @@ export function PropertySettings() {
     setSettings({
       ...settings,
       [section]: {
-        ...settings[section],
+        ...(settings[section] as Record<string, any> || {}),
         [field]: value,
       },
     });
@@ -177,7 +177,7 @@ export function PropertySettings() {
     setSettings({
       ...settings,
       [section]: {
-        ...(settings[section] as any),
+        ...(settings[section] as Record<string, any> || {}),
         [field]: value,
       },
     });

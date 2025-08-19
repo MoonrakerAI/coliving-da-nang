@@ -1,9 +1,9 @@
-import { NextResponse } from 'next/server'
-import { sendPaymentReminder } from '@/lib/email/reminder-sender';
-import { CommunicationOperations } from '@/lib/db/operations/communications';
-import { CommunicationType, CommunicationDirection, CommunicationSource } from '@/lib/db/models/communication';
+import { NextResponse } from 'next/server';
+import { getPaymentById, updatePayment } from '@/lib/db/operations/payments';
 import { getTenantById } from '@/lib/db/operations/tenants';
-import { getPaymentById, updatePayment } from '@/lib/db/operations/payments'
+import { sendEmail } from '@/lib/email';
+import { CommunicationOperations } from '@/lib/db/operations/communications';
+import { CommunicationType, CommunicationDirection, CommunicationSource, CommunicationStatus, CommunicationPriority } from '@/lib/db/models/communication';
 
 export async function POST(request: Request) {
   try {
@@ -25,8 +25,26 @@ export async function POST(request: Request) {
           throw new Error(`Tenant with ID ${payment.tenantId} not found`);
         }
 
-        await sendPaymentReminder(payment, tenant);
-        await updatePayment({ id, lastReminderDate: new Date() });
+        // Send payment reminder email
+        const reminderSubject = `Payment Reminder - ${payment.description}`
+        const reminderBody = `
+          Dear ${tenant.firstName} ${tenant.lastName},
+          
+          This is a reminder that your payment of $${payment.amountCents / 100} for ${payment.description} is due on ${payment.dueDate.toLocaleDateString()}.
+          
+          Please make your payment as soon as possible to avoid any late fees.
+          
+          If you have any questions, please contact us.
+          
+          Thank you!
+        `
+        
+        await sendEmail({
+          to: tenant.email,
+          subject: reminderSubject,
+          text: reminderBody
+        });
+        // Payment reminder sent - no need to update payment record
 
         await CommunicationOperations.create({
           tenantId: payment.tenantId,
@@ -37,6 +55,10 @@ export async function POST(request: Request) {
           source: CommunicationSource.PAYMENT_REMINDER,
           subject: 'Payment Reminder',
           content: `Payment reminder sent for amount ${payment.amountCents / 100} due on ${payment.dueDate.toLocaleDateString()}`,
+          status: CommunicationStatus.OPEN,
+          priority: CommunicationPriority.MEDIUM,
+          attachments: [],
+          tags: ['payment-reminder'],
           createdBy: 'system',
           timestamp: new Date(),
         });

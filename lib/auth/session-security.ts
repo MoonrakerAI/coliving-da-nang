@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth-config'
-import { logAuthenticationEvent, logSecurityEvent } from '@/lib/db/operations/audit-log'
+import { logAuthenticationEvent, logSecurityEvent, createAuditLog } from '@/lib/db/operations/audit-log'
 import { AuditEventType } from '@/lib/db/models/audit-log'
 
 // Session security configuration
@@ -20,7 +20,7 @@ export function generateCSRFToken(): string {
 export function validateCSRFToken(token: string, sessionToken: string): boolean {
   // In a real implementation, you'd store and validate CSRF tokens properly
   // For now, we'll do a basic validation
-  return token && token.length > 0 && sessionToken && sessionToken.length > 0
+  return !!(token && token.length > 0 && sessionToken && sessionToken.length > 0)
 }
 
 // Session management utilities
@@ -94,13 +94,13 @@ export async function validateSession(request: NextRequest): Promise<{
   if (sessionAge > SESSION_CONFIG.maxAge * 1000) {
     securityFlags.push('SESSION_EXPIRED')
     
-    await logAuthenticationEvent(
-      AuditEventType.SESSION_EXPIRED,
-      session.user.id,
+    await createAuditLog({
+      eventType: AuditEventType.SESSION_EXPIRED,
+      userId: session.user.id,
       ipAddress,
       userAgent,
-      { sessionAge }
-    )
+      details: { reason: 'Session timeout' }
+    })
     
     return {
       isValid: false,
@@ -145,13 +145,13 @@ export async function invalidateSession(
   userAgent?: string
 ): Promise<void> {
   // Log session invalidation
-  await logAuthenticationEvent(
-    AuditEventType.SESSION_INVALIDATED,
+  await createAuditLog({
+    eventType: AuditEventType.SESSION_INVALIDATED,
     userId,
     ipAddress,
     userAgent,
-    { reason, sessionId }
-  )
+    details: { reason: 'Manual session invalidation' }
+  })
   
   // In a real implementation, you'd remove the session from storage
   console.log(`Session invalidated for user ${userId}: ${reason}`)

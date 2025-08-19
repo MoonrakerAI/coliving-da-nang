@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
     for (const propertyId of propertyIds) {
       const taskIds = await kv.smembers(`property:${propertyId}:tasks`)
       for (const taskId of taskIds) {
-        const task = await kv.hgetall(`task:${taskId}`)
+        const task = await kv.hgetall(`task:${taskId}`) as any
         if (task && !task.deletedAt) {
           allTasks.push({
             ...task,
@@ -144,12 +144,14 @@ export async function POST(request: NextRequest) {
 
     // Sort by relevance score (descending) or specified field
     searchResults.sort((a, b) => {
-      if (sortBy && sortBy !== 'relevance') {
+      if (sortBy && sortBy !== ('relevance' as any)) {
         const aValue = a.task[sortBy as keyof Task]
         const bValue = b.task[sortBy as keyof Task]
         
-        if (aValue < bValue) return sortOrder === 'asc' ? -1 : 1
-        if (aValue > bValue) return sortOrder === 'asc' ? 1 : -1
+        if (aValue != null && bValue != null) {
+          if (aValue < bValue) return sortOrder === 'asc' ? -1 : 1
+          if (aValue > bValue) return sortOrder === 'asc' ? 1 : -1
+        }
         return 0
       }
       

@@ -20,7 +20,7 @@ import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { Switch } from '@/components/ui/switch'
 import Link from 'next/link'
-import { CreateTenantInput } from '@/lib/db/models/tenant'
+import { CreateTenantInput, TenantStatusType } from '@/lib/db/models/tenant'
 
 interface EmergencyContactForm {
   name: string
@@ -122,29 +122,31 @@ export default function NewTenant() {
         lastName: formState.lastName,
         email: formState.email,
         phone: formState.phone,
-        profilePhoto: formState.profilePhoto,
-        status: formState.status,
-        propertyId: formState.propertyId || '00000000-0000-0000-0000-000000000000', // Default property ID
+        profilePhoto: formState.profilePhoto || undefined,
+        status: formState.status as TenantStatusType,
+        propertyId: '00000000-0000-0000-0000-000000000000', // Default property ID
         emergencyContacts: formState.emergencyContacts.map(contact => ({
           ...contact,
           id: crypto.randomUUID(),
           createdAt: new Date(),
           updatedAt: new Date()
         })),
-        // Legacy fields for backward compatibility
-        roomNumber: formState.roomNumber,
-        leaseStart: formState.moveInDate ? new Date(formState.moveInDate) : new Date(),
-        leaseEnd: formState.leaseEndDate ? new Date(formState.leaseEndDate) : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
-        monthlyRentCents: formState.monthlyRentCents ? parseInt(formState.monthlyRentCents) * 100 : 0,
-        depositCents: formState.depositCents ? parseInt(formState.depositCents) * 100 : 0,
-        // Enhanced room assignment
+        documents: [],
+        communicationHistory: [],
+        leaseHistory: [],
         roomAssignment: formState.roomNumber ? {
           roomId: crypto.randomUUID(),
           roomNumber: formState.roomNumber,
           moveInDate: new Date(formState.moveInDate || Date.now()),
           leaseEndDate: new Date(formState.leaseEndDate || Date.now() + 365 * 24 * 60 * 60 * 1000),
           isActive: true
-        } : undefined
+        } : undefined,
+        // Legacy fields for backward compatibility
+        roomNumber: formState.roomNumber,
+        leaseStart: formState.moveInDate ? new Date(formState.moveInDate) : undefined,
+        leaseEnd: formState.leaseEndDate ? new Date(formState.leaseEndDate) : undefined,
+        monthlyRentCents: formState.monthlyRentCents ? parseInt(formState.monthlyRentCents) : undefined,
+        depositCents: formState.depositCents ? parseInt(formState.depositCents) : undefined
       }
 
       const response = await fetch('/api/tenants', {
