@@ -1,13 +1,13 @@
+"use client"
+
 import Link from 'next/link'
 import { ReactNode } from 'react'
 import { usePathname } from 'next/navigation'
-import { cn } from '@/lib/utils/cn'
+import { cn } from '@/lib/utils'
 import { LayoutDashboard, CreditCard, Wallet, Users, Home, Building2 } from 'lucide-react'
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
-  // use client only for pathname
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  const pathname = typeof window !== 'undefined' ? window.location.pathname : ''
+  const pathname = usePathname()
 
   const nav = [
     { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -25,7 +25,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         </div>
         <nav className="flex-1 p-4 space-y-1">
           {nav.map(({ href, label, icon: Icon }) => {
-            const active = pathname.startsWith(href)
+            const active = pathname?.startsWith(href)
             return (
               <Link
                 key={href}

@@ -28,6 +28,9 @@ export default async function AdminDashboard() {
     redirect('/dashboard');
   }
 
+  // Primary admin entry should land on the dashboard with the new layout
+  redirect('/admin/dashboard');
+
   const adminSections = [
     {
       title: 'User Management',
