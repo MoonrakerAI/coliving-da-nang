@@ -10,8 +10,8 @@ export async function GET(
 ) {
   try {
     // Require authentication
-    const user = await requireAuth(request)
-    if (!user) {
+    const session = await requireAuth()
+    if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 

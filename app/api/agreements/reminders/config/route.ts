@@ -6,8 +6,8 @@ import { requireAuth } from '@/lib/auth-config'
 export async function GET(request: NextRequest) {
   try {
     // Require authentication
-    const user = await requireAuth(request)
-    if (!user) {
+    const session = await requireAuth()
+    if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -32,8 +32,8 @@ export async function GET(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     // Require authentication
-    const user = await requireAuth(request)
-    if (!user) {
+    const session = await requireAuth()
+    if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 

@@ -117,7 +117,7 @@ export const authOptions: NextAuthOptions = {
 }
 
 // Authentication utilities for API routes
-export async function requireAuth(req: Request) {
+export async function requireAuth() {
   const session = await getServerSession(authOptions)
   if (!session) {
     throw new Error('Authentication required')

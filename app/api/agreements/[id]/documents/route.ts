@@ -10,8 +10,8 @@ export async function GET(
 ) {
   try {
     // Require authentication
-    const user = await requireAuth(request)
-    if (!user) {
+    const session = await requireAuth()
+    if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -69,8 +69,8 @@ export async function POST(
 ) {
   try {
     // Require authentication
-    const user = await requireAuth(request)
-    if (!user) {
+    const session = await requireAuth()
+    if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -120,7 +120,7 @@ export async function POST(
       {
         description,
         documentType,
-        uploadedBy: user.id,
+        uploadedBy: session.user.id,
         uploadedAt: new Date().toISOString(),
         originalFileName: file.name
       },
