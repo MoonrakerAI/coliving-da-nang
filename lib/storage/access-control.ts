@@ -245,11 +245,11 @@ export function checkRateLimit(
  */
 export function cleanupRateLimit(): void {
   const now = Date.now();
-  for (const [key, value] of rateLimitStore.entries()) {
+  rateLimitStore.forEach((value, key) => {
     if (now > value.resetTime) {
       rateLimitStore.delete(key);
     }
-  }
+  });
 }
 
 // Clean up rate limit store every 5 minutes

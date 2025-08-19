@@ -1,4 +1,16 @@
-import sharp from 'sharp';
+// Lazy-load sharp to avoid build-time failures when optional deps aren't installed
+let _sharp: any | undefined
+function sharp() {
+  if (!_sharp) {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      _sharp = require('sharp')
+    } catch (e) {
+      throw new Error('Image processing module (sharp) is not available. Install it or disable image processing.')
+    }
+  }
+  return _sharp as any
+}
 
 export interface ImageProcessingOptions {
   quality?: number;
@@ -57,7 +69,7 @@ export async function processImage(
   } = options;
 
   try {
-    let processor = sharp(inputBuffer)
+    let processor = sharp()(inputBuffer)
       .resize(maxWidth, maxHeight, {
         fit: 'inside',
         withoutEnlargement: true,
@@ -88,7 +100,7 @@ export async function processImage(
     }
 
     const buffer = await processor.toBuffer();
-    const metadata = await sharp(buffer).metadata();
+    const metadata = await sharp()(buffer).metadata();
 
     return {
       buffer,
@@ -115,7 +127,7 @@ export async function generateThumbnails(
   try {
     const thumbnails = await Promise.all([
       // Small thumbnail
-      sharp(inputBuffer)
+      sharp()(inputBuffer)
         .resize(sizes.small.width, sizes.small.height, {
           fit: 'cover',
           position: 'center',
@@ -124,7 +136,7 @@ export async function generateThumbnails(
         .toBuffer(),
       
       // Medium thumbnail
-      sharp(inputBuffer)
+      sharp()(inputBuffer)
         .resize(sizes.medium.width, sizes.medium.height, {
           fit: 'cover',
           position: 'center',
@@ -133,7 +145,7 @@ export async function generateThumbnails(
         .toBuffer(),
       
       // Large thumbnail
-      sharp(inputBuffer)
+      sharp()(inputBuffer)
         .resize(sizes.large.width, sizes.large.height, {
           fit: 'inside',
           withoutEnlargement: true,
@@ -144,7 +156,7 @@ export async function generateThumbnails(
 
     const results = await Promise.all(
       thumbnails.map(async (buffer, index) => {
-        const metadata = await sharp(buffer).metadata();
+        const metadata = await sharp()(buffer).metadata();
         return {
           buffer,
           metadata: {
@@ -212,10 +224,10 @@ export async function processReceiptImage(
 export async function validateImage(inputBuffer: Buffer): Promise<{
   valid: boolean;
   error?: string;
-  metadata?: sharp.Metadata;
+  metadata?: { width?: number; height?: number; format?: string; channels?: number };
 }> {
   try {
-    const metadata = await sharp(inputBuffer).metadata();
+    const metadata = await sharp()(inputBuffer).metadata();
     
     if (!metadata.format) {
       return { valid: false, error: 'Unable to determine image format' };
@@ -257,8 +269,8 @@ export async function getOptimalCompressionSettings(
   inputBuffer: Buffer
 ): Promise<ImageProcessingOptions> {
   try {
-    const metadata = await sharp(inputBuffer).metadata();
-    const stats = await sharp(inputBuffer).stats();
+    const metadata = await sharp()(inputBuffer).metadata();
+    const stats = await sharp()(inputBuffer).stats();
     
     // Base settings
     let quality = 85;

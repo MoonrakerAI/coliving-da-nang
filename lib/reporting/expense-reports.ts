@@ -1,4 +1,4 @@
-import { db } from '../db/index'
+import { db } from '../db'
 import { getExpenses } from '../db/operations/expenses'
 import { getCategoriesForProperty, getCategoryAnalytics } from '../db/operations/expense-categories'
 import { getCategory } from '../db/operations/expense-categories'
@@ -141,7 +141,7 @@ export async function generateExpenseReport(
     const trends = await generateTrendData(propertyId, period)
     
     // Generate comparison data
-    const comparisons = await generateComparisonData(propertyId, period)
+    const comparisons = [await generateComparisonData(propertyId, period)]
     
     // Generate tax summary
     const taxSummary = generateTaxSummary(expenses)
@@ -210,7 +210,7 @@ async function generateCategoryBreakdown(expenses: Expense[], propertyId: string
   // Convert to CategoryTotal format
   const breakdown: CategoryTotal[] = []
   
-  for (const [categoryId, data] of categoryTotals) {
+  for (const [categoryId, data] of Array.from(categoryTotals.entries())) {
     const category = await getCategory(categoryId)
     const percentage = totalAmount > 0 ? (data.amount / totalAmount) * 100 : 0
     
@@ -226,7 +226,7 @@ async function generateCategoryBreakdown(expenses: Expense[], propertyId: string
     })
     
     // Add subcategory breakdowns
-    for (const [subcategoryId, subData] of data.subcategories) {
+    for (const [subcategoryId, subData] of Array.from(data.subcategories.entries())) {
       const subcategory = category?.subcategories.find(sub => sub.id === subcategoryId)
       const subPercentage = totalAmount > 0 ? (subData.amount / totalAmount) * 100 : 0
       
@@ -253,7 +253,8 @@ async function generateTrendData(propertyId: string, currentPeriod: ReportPeriod
   const trends: TrendData[] = []
   
   // Generate periods for trend analysis (last 12 months/quarters/years)
-  const periods = generateReportPeriods(currentPeriod.type, 12)
+  const trendType = currentPeriod.type === 'custom' ? 'monthly' : currentPeriod.type
+  const periods = generateReportPeriods(trendType, 12)
   
   for (const period of periods) {
     const filters: ExpenseFilters = {
@@ -442,10 +443,10 @@ export async function getCachedReport(
 ): Promise<ExpenseReport | null> {
   try {
     const cacheKey = `report:${propertyId}:${period.type}:${period.start.getTime()}-${period.end.getTime()}`
-    const cachedData = await db.get(cacheKey)
+    const cachedData = await db.get<string>(cacheKey)
     
     if (cachedData) {
-      const report = JSON.parse(cachedData)
+      const report = JSON.parse(cachedData) as ExpenseReport
       // Check if cache is still valid
       const cacheAge = Date.now() - new Date(report.generatedAt).getTime()
       if (cacheAge < REPORT_CACHE_TTL) {
@@ -463,7 +464,7 @@ export async function getCachedReport(
 export async function cacheReport(report: ExpenseReport): Promise<void> {
   try {
     const cacheKey = `report:${report.propertyId}:${report.period.type}:${report.period.start.getTime()}-${report.period.end.getTime()}`
-    await db.setex(cacheKey, REPORT_CACHE_TTL / 1000, JSON.stringify(report))
+    await db.set(cacheKey, JSON.stringify(report), { ex: REPORT_CACHE_TTL / 1000 })
   } catch (error) {
     console.error('Error caching report:', error)
   }

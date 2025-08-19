@@ -76,7 +76,7 @@ export async function createProperty(input: CreatePropertyInput): Promise<Proper
 export async function getProperty(id: string): Promise<Property | null> {
   try {
     const propertyKey = getPropertyKey(id)
-    const data = await db.hgetall(propertyKey)
+    const data = await db.hgetall(propertyKey) as Record<string, string>
     
     if (!data || Object.keys(data).length === 0) {
       return null

@@ -1,5 +1,7 @@
 'use client'
 
+export const dynamic = 'force-dynamic'
+
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { Agreement, AgreementStatus } from '@/lib/db/models/agreement'
@@ -26,7 +28,8 @@ interface AgreementFilters {
 }
 
 export default function AgreementsPage() {
-  const { data: session } = useSession()
+  const sessionResult = useSession()
+  const session = sessionResult?.data ?? null
   const [agreements, setAgreements] = useState<Agreement[]>([])
   const [filteredAgreements, setFilteredAgreements] = useState<Agreement[]>([])
   const [loading, setLoading] = useState(true)

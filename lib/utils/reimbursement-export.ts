@@ -38,8 +38,8 @@ export class ReimbursementExportService {
     }
 
     const rows = reimbursements.map(reimbursement => {
-      const approvedAt = reimbursement.statusHistory.find(h => h.status === 'Approved')?.changedAt
-      const paidAt = reimbursement.statusHistory.find(h => h.status === 'Paid')?.changedAt
+      const approvedAt = reimbursement.statusHistory.find(h => h.toStatus === 'Approved')?.changedAt
+      const paidAt = reimbursement.statusHistory.find(h => h.toStatus === 'Paid')?.changedAt
       
       const processingDays = paidAt 
         ? Math.round((new Date(paidAt).getTime() - reimbursement.createdAt.getTime()) / (1000 * 60 * 60 * 24))
@@ -53,7 +53,7 @@ export class ReimbursementExportService {
         (reimbursement.amountCents / 100).toFixed(2),
         reimbursement.currency,
         reimbursement.status,
-        reimbursement.reason || '',
+        reimbursement.deniedReason || reimbursement.comments?.[0] || '',
         reimbursement.paymentMethod || '',
         reimbursement.paymentReference || '',
         reimbursement.createdAt.toISOString(),
@@ -65,14 +65,14 @@ export class ReimbursementExportService {
       if (options.includeComments) {
         const comments = reimbursement.statusHistory
           .filter(h => h.comment)
-          .map(h => `${h.status}: ${h.comment}`)
+          .map(h => `${h.toStatus}: ${h.comment}`)
           .join('; ')
         row.push(comments)
       }
 
       if (options.includeStatusHistory) {
         const history = reimbursement.statusHistory
-          .map(h => `${h.status} (${new Date(h.changedAt).toISOString()})`)
+          .map(h => `${h.toStatus} (${new Date(h.changedAt).toISOString()})`)
           .join('; ')
         row.push(history)
       }
@@ -93,7 +93,7 @@ export class ReimbursementExportService {
       totalRecords: reimbursements.length,
       options,
       data: reimbursements.map(reimbursement => {
-        const baseData = {
+        const baseData: any = {
           id: reimbursement.id,
           expenseId: reimbursement.expenseId,
           requestorId: reimbursement.requestorId,
@@ -101,7 +101,7 @@ export class ReimbursementExportService {
           amountCents: reimbursement.amountCents,
           currency: reimbursement.currency,
           status: reimbursement.status,
-          reason: reimbursement.reason,
+          reason: reimbursement.deniedReason || reimbursement.comments?.[0],
           paymentMethod: reimbursement.paymentMethod,
           paymentReference: reimbursement.paymentReference,
           createdAt: reimbursement.createdAt.toISOString(),

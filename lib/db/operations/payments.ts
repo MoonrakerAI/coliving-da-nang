@@ -76,7 +76,7 @@ export async function createPayment(input: CreatePaymentInput): Promise<Payment>
 export async function getPayment(id: string): Promise<Payment | null> {
   try {
     const paymentKey = getPaymentKey(id)
-    const data = await db.hgetall(paymentKey)
+    const data = await db.hgetall(paymentKey) as Record<string, string>
     
     if (!data || Object.keys(data).length === 0) {
       return null

@@ -1,5 +1,7 @@
 'use client'
 
+export const dynamic = 'force-dynamic'
+
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
@@ -9,7 +11,9 @@ import { TaskCompletion } from '@/components/tasks/TaskCompletion'
 import { Plus, Filter, Search, Calendar, CheckCircle, Clock, AlertTriangle } from 'lucide-react'
 
 export default function TasksPage() {
-  const { data: session, status } = useSession()
+  const sessionResult = useSession()
+  const session = sessionResult?.data ?? null
+  const status = sessionResult?.status ?? 'loading'
   const router = useRouter()
   
   const [tasks, setTasks] = useState<Task[]>([])

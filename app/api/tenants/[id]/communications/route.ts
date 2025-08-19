@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { addCommunicationRecord } from '@/lib/db/operations/tenants'
+import { CommunicationDirection, CommunicationPriority, CommunicationStatus, CommunicationType } from '@/lib/db/models/communication'
 import { requireAuth } from '@/lib/auth-config';
 
 // POST /api/tenants/[id]/communications - Add communication record
@@ -16,12 +17,20 @@ export async function POST(
     const body = await request.json()
     
     const communicationData = {
-      type: body.type,
-      subject: body.subject,
-      content: body.content,
-      issueTags: body.issueTags || [],
-      resolved: body.resolved || false,
-      createdBy: session.user.email || session.user.id || 'Unknown'
+      type: body.type as CommunicationType,
+      subject: body.subject as string,
+      content: body.content as string,
+      createdBy: (session.user.email || session.user.id || 'Unknown') as string,
+      direction: (body.direction as CommunicationDirection) || CommunicationDirection.OUTGOING,
+      tags: (body.issueTags as string[]) || body.tags || [],
+      attachments: (body.attachments as string[]) || [],
+      priority: (body.priority as CommunicationPriority) || CommunicationPriority.MEDIUM,
+      status: (body.resolved as boolean) ? CommunicationStatus.RESOLVED : (body.status as CommunicationStatus) || CommunicationStatus.OPEN,
+      source: body.source,
+      paymentId: body.paymentId,
+      duration: body.duration,
+      assignedTo: body.assignedTo,
+      propertyId: body.propertyId
     }
     
     const tenant = await addCommunicationRecord(params.id, communicationData)

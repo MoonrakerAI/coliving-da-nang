@@ -202,9 +202,12 @@ function calculateTaxDeductions(expenses: any[]): TaxDeductionCategory[] {
     }
     acc[category].expenses.push(expense);
     return acc;
-  }, {} as Record<string, any>);
+  }, {} as Record<string, { amount: number; count: number; receiptsCount: number; expenses: any[] }>);
 
-  return Object.entries(categoryTotals).map(([category, data]) => {
+  return (Object.entries(categoryTotals) as Array<[
+    string,
+    { amount: number; count: number; receiptsCount: number; expenses: any[] }
+  ]>).map(([category, data]) => {
     const irsMapping = IRS_CATEGORY_MAPPINGS.find(m => m.businessCategory === category);
     const isDeductible = isExpenseDeductible(category, data.expenses);
     
@@ -240,19 +243,21 @@ async function calculatePropertyDepreciation(userId: string, propertyId: string 
   const key = propertyId ? `property:${propertyId}` : `user:${userId}:properties`;
   
   try {
-    const properties = propertyId 
-      ? [await kv.get(key)]
-      : await kv.lrange(key, 0, -1);
+    type PropertyLike = { purchasePrice?: number; landValue?: number } | null | undefined;
+    const properties: PropertyLike[] = propertyId 
+      ? [await kv.get(key) as PropertyLike]
+      : await kv.lrange(key, 0, -1) as PropertyLike[];
     
     let totalDepreciation = 0;
     
     for (const property of properties) {
       if (!property) continue;
+      const p = property as { purchasePrice?: number; landValue?: number };
       
       // Standard residential rental property depreciation: 27.5 years
       const depreciationPeriod = 27.5;
-      const purchasePrice = property.purchasePrice || 0;
-      const landValue = property.landValue || purchasePrice * 0.2; // Estimate 20% for land
+      const purchasePrice = p.purchasePrice ?? 0;
+      const landValue = p.landValue ?? purchasePrice * 0.2; // Estimate 20% for land
       const depreciableBasis = purchasePrice - landValue;
       
       if (depreciableBasis > 0) {

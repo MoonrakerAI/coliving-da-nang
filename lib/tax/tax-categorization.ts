@@ -578,10 +578,19 @@ export function exportTaxData(
   summary: TaxYearSummary,
   format: 'turbotax' | 'hrblock' | 'generic' = 'generic'
 ): any {
-  const taxData = {
+  const taxData: {
+    taxYear: number;
+    propertyId: string;
+    businessExpenses: Record<string, any>;
+    totals?: {
+      totalDeductible: number;
+      totalNonDeductible: number;
+      deductiblePercentage: number;
+    };
+  } = {
     taxYear: summary.taxYear,
     propertyId: summary.propertyId,
-    businessExpenses: {} as any
+    businessExpenses: {},
   }
 
   // Map to tax software format

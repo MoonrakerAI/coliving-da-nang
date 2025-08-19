@@ -1,6 +1,8 @@
 import { Metadata } from 'next'
 import { ExpenseForm } from './components/ExpenseForm'
 
+export const dynamic = 'force-dynamic'
+
 export const metadata: Metadata = {
   title: 'New Expense | Coliving Da Nang',
   description: 'Add a new property expense',

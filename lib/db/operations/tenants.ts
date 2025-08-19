@@ -8,10 +8,11 @@ import {
   UpdateTenantSchema,
   EmergencyContact,
   TenantDocument,
-  Communication,
   RoomAssignment,
   TenantStatusType
 } from '../models/tenant'
+import type { Communication } from '../models/communication'
+import { CommunicationDirection, CommunicationPriority, CommunicationSource, CommunicationStatus, CommunicationType } from '../models/communication'
 import { v4 as uuidv4 } from 'uuid'
 
 // Generate Redis keys for tenant data
@@ -47,23 +48,32 @@ export async function createTenant(input: CreateTenantInput): Promise<Tenant> {
     // Use pipeline for atomic operations
     const pipeline = db.pipeline()
     
-    // Store tenant data as hash
+    // Store tenant data as hash (all values must be strings)
     const tenantData: Record<string, string> = {
-      ...validatedTenant,
+      id: validatedTenant.id,
+      email: validatedTenant.email,
+      firstName: validatedTenant.firstName,
+      lastName: validatedTenant.lastName,
+      phone: validatedTenant.phone,
+      status: validatedTenant.status,
+      propertyId: validatedTenant.propertyId,
       createdAt: validatedTenant.createdAt.toISOString(),
       updatedAt: validatedTenant.updatedAt.toISOString(),
-      // Handle legacy fields
-      leaseStart: validatedTenant.leaseStart?.toISOString() || '',
-      leaseEnd: validatedTenant.leaseEnd?.toISOString() || '',
-      monthlyRentCents: validatedTenant.monthlyRentCents?.toString() || '',
-      depositCents: validatedTenant.depositCents?.toString() || '',
-      emergencyContact: validatedTenant.emergencyContact ? JSON.stringify(validatedTenant.emergencyContact) : '',
-      // Handle enhanced fields
+      ...(validatedTenant.profilePhoto ? { profilePhoto: validatedTenant.profilePhoto } : {}),
+      // Legacy fields
+      ...(validatedTenant.roomNumber ? { roomNumber: validatedTenant.roomNumber } : {}),
+      ...(validatedTenant.leaseStart ? { leaseStart: validatedTenant.leaseStart.toISOString() } : {}),
+      ...(validatedTenant.leaseEnd ? { leaseEnd: validatedTenant.leaseEnd.toISOString() } : {}),
+      ...(validatedTenant.monthlyRentCents !== undefined ? { monthlyRentCents: String(validatedTenant.monthlyRentCents) } : {}),
+      ...(validatedTenant.depositCents !== undefined ? { depositCents: String(validatedTenant.depositCents) } : {}),
+      ...(validatedTenant.emergencyContact ? { emergencyContact: JSON.stringify(validatedTenant.emergencyContact) } : {}),
+      // Enhanced fields
       emergencyContacts: JSON.stringify(validatedTenant.emergencyContacts || []),
       documents: JSON.stringify(validatedTenant.documents || []),
       communicationHistory: JSON.stringify(validatedTenant.communicationHistory || []),
       leaseHistory: JSON.stringify(validatedTenant.leaseHistory || []),
-      roomAssignment: validatedTenant.roomAssignment ? JSON.stringify(validatedTenant.roomAssignment) : ''
+      ...(validatedTenant.roomAssignment ? { roomAssignment: JSON.stringify(validatedTenant.roomAssignment) } : {}),
+      ...(validatedTenant.deletedAt ? { deletedAt: validatedTenant.deletedAt.toISOString() } : {})
     }
     
     // Remove empty string values to avoid storing unnecessary data
@@ -94,7 +104,7 @@ export async function createTenant(input: CreateTenantInput): Promise<Tenant> {
 export async function getTenant(id: string): Promise<Tenant | null> {
   try {
     const tenantKey = getTenantKey(id)
-    const data = await db.hgetall(tenantKey)
+    const data = await db.hgetall(tenantKey) as Record<string, string>
     
     if (!data || Object.keys(data).length === 0) {
       return null
@@ -156,21 +166,30 @@ export async function updateTenant(input: UpdateTenantInput): Promise<Tenant | n
     // Update in Redis
     const tenantKey = getTenantKey(id)
     const tenantData: Record<string, string> = {
-      ...validatedTenant,
+      id: validatedTenant.id,
+      email: validatedTenant.email,
+      firstName: validatedTenant.firstName,
+      lastName: validatedTenant.lastName,
+      phone: validatedTenant.phone,
+      status: validatedTenant.status,
+      propertyId: validatedTenant.propertyId,
       createdAt: validatedTenant.createdAt.toISOString(),
       updatedAt: validatedTenant.updatedAt.toISOString(),
-      // Handle legacy fields
-      leaseStart: validatedTenant.leaseStart?.toISOString() || '',
-      leaseEnd: validatedTenant.leaseEnd?.toISOString() || '',
-      monthlyRentCents: validatedTenant.monthlyRentCents?.toString() || '',
-      depositCents: validatedTenant.depositCents?.toString() || '',
-      emergencyContact: validatedTenant.emergencyContact ? JSON.stringify(validatedTenant.emergencyContact) : '',
-      // Handle enhanced fields
+      ...(validatedTenant.profilePhoto ? { profilePhoto: validatedTenant.profilePhoto } : {}),
+      // Legacy fields
+      ...(validatedTenant.roomNumber ? { roomNumber: validatedTenant.roomNumber } : {}),
+      ...(validatedTenant.leaseStart ? { leaseStart: validatedTenant.leaseStart.toISOString() } : {}),
+      ...(validatedTenant.leaseEnd ? { leaseEnd: validatedTenant.leaseEnd.toISOString() } : {}),
+      ...(validatedTenant.monthlyRentCents !== undefined ? { monthlyRentCents: String(validatedTenant.monthlyRentCents) } : {}),
+      ...(validatedTenant.depositCents !== undefined ? { depositCents: String(validatedTenant.depositCents) } : {}),
+      ...(validatedTenant.emergencyContact ? { emergencyContact: JSON.stringify(validatedTenant.emergencyContact) } : {}),
+      // Enhanced fields
       emergencyContacts: JSON.stringify(validatedTenant.emergencyContacts || []),
       documents: JSON.stringify(validatedTenant.documents || []),
       communicationHistory: JSON.stringify(validatedTenant.communicationHistory || []),
       leaseHistory: JSON.stringify(validatedTenant.leaseHistory || []),
-      roomAssignment: validatedTenant.roomAssignment ? JSON.stringify(validatedTenant.roomAssignment) : ''
+      ...(validatedTenant.roomAssignment ? { roomAssignment: JSON.stringify(validatedTenant.roomAssignment) } : {}),
+      ...(validatedTenant.deletedAt ? { deletedAt: validatedTenant.deletedAt.toISOString() } : {})
     }
     
     // Remove empty string values
@@ -395,7 +414,24 @@ export async function removeTenantDocument(tenantId: string, documentId: string)
 }
 
 // Add communication record
-export async function addCommunicationRecord(tenantId: string, communication: Omit<Communication, 'id' | 'timestamp'>): Promise<Tenant | null> {
+type NewCommunicationInput = {
+  type: CommunicationType
+  subject: string
+  content: string
+  createdBy: string
+  direction: CommunicationDirection
+  tags?: string[]
+  attachments?: string[]
+  priority?: CommunicationPriority
+  status?: CommunicationStatus
+  source?: CommunicationSource
+  paymentId?: string
+  duration?: number
+  assignedTo?: string
+  propertyId?: string
+}
+
+export async function addCommunicationRecord(tenantId: string, communication: NewCommunicationInput): Promise<Tenant | null> {
   try {
     const tenant = await getTenant(tenantId)
     if (!tenant) {
@@ -403,12 +439,29 @@ export async function addCommunicationRecord(tenantId: string, communication: Om
     }
 
     const newCommunication: Communication = {
-      ...communication,
       id: uuidv4(),
-      timestamp: new Date()
+      tenantId,
+      tenant: undefined,
+      propertyId: communication.propertyId ?? tenant.propertyId,
+      type: communication.type,
+      subject: communication.subject,
+      content: communication.content,
+      timestamp: new Date(),
+      duration: communication.duration,
+      priority: communication.priority ?? CommunicationPriority.MEDIUM,
+      status: communication.status ?? CommunicationStatus.OPEN,
+      createdBy: communication.createdBy,
+      assignedTo: communication.assignedTo,
+      attachments: communication.attachments ?? [],
+      tags: communication.tags ?? [],
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      direction: communication.direction,
+      source: communication.source ?? CommunicationSource.MANUAL,
+      paymentId: communication.paymentId
     }
 
-    const updatedHistory = [...(tenant.communicationHistory || []), newCommunication]
+    const updatedHistory = [...(tenant.communicationHistory || []), newCommunication.id]
     
     return await updateTenant({
       id: tenantId,

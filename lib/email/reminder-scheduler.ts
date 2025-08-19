@@ -1,9 +1,9 @@
 import { addDays, isAfter, isBefore, isToday, parseISO, startOfDay } from 'date-fns'
-import { sendPaymentReminder, checkRateLimit, type ReminderEmailProps } from './reminder-sender'
+import { sendPaymentReminder, checkRateLimit } from './reminder-sender'
 import { getPaymentsByStatus, getPaymentById } from '../db/operations/payments'
 import { getTenantById } from '../db/operations/tenants'
-import { getPropertyById } from '../db/operations/properties'
-import { createReminderLog, getReminderHistory, type ReminderLog } from '../db/operations/reminders'
+import { createReminderLog, getReminderHistory } from '../db/operations/reminders'
+import type { ReminderLog } from '../db/models/reminder'
 
 export interface ReminderSettings {
   enabled: boolean
@@ -175,10 +175,9 @@ async function sendReminderForPayment(payment: any, reminderType: 'upcoming' | '
   try {
     // Get tenant and property details
     const tenant = await getTenantById(payment.tenantId)
-    const property = await getPropertyById(payment.propertyId)
     
-    if (!tenant || !property) {
-      console.error(`Missing tenant or property data for payment ${payment.id}`)
+    if (!tenant) {
+      console.error(`Missing tenant data for payment ${payment.id}`)
       return false
     }
 
@@ -188,23 +187,7 @@ async function sendReminderForPayment(payment: any, reminderType: 'upcoming' | '
       return false
     }
 
-    // Get property-specific settings
-    const propertySettings = await getPropertyReminderSettings(payment.propertyId)
-    
-    const reminderProps: ReminderEmailProps = {
-      tenantName: tenant.name,
-      tenantEmail: tenant.email,
-      paymentAmount: payment.amount,
-      dueDate: payment.dueDate,
-      propertyName: property.name,
-      paymentMethods: property.paymentMethods || ['Bank Transfer', 'Cash'],
-      contactEmail: propertySettings?.contactEmail || property.contactEmail || 'management@coliving-danang.com',
-      paymentReference: payment.reference || `PAY-${payment.id}`,
-      propertyLogo: property.logoUrl,
-      reminderType,
-    }
-
-    const result = await sendPaymentReminder(reminderProps)
+    const result = await sendPaymentReminder(payment, tenant)
     
     if (result.success) {
       // Log the reminder

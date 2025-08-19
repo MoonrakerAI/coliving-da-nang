@@ -4,7 +4,7 @@ import { Payment } from '../db/models/payment';
 import { Tenant } from '../db/models/tenant';
 import { getPropertyById } from '../db/operations/properties';
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+// Lazy instantiate Resend within functions to avoid build-time API key checks
 
 export interface ReminderEmailProps {
   tenantName: string
@@ -42,17 +42,23 @@ export async function sendPaymentReminder(
     paymentAmount: payment.amountCents / 100,
     dueDate: payment.dueDate.toISOString(),
     propertyName: property.name,
-    paymentMethods: property.settings.paymentMethods || [],
-    contactEmail: property.settings.contactEmail || 'support@coliving-danang.com',
+    paymentMethods: [],
+    contactEmail: process.env.SUPPORT_EMAIL || 'support@coliving-danang.com',
     paymentReference: payment.reference || payment.id,
-    propertyLogo: property.logoUrl,
+    propertyLogo: undefined,
     reminderType: reminderType,
   };
   try {
+    const apiKey = process.env.RESEND_API_KEY
+    if (!apiKey) {
+      // Don't throw at build-time; fail gracefully at runtime
+      return { success: false, error: 'Email service not configured (missing RESEND_API_KEY)' }
+    }
+    const resend = new Resend(apiKey)
     const subject = getSubjectLine(props.reminderType, props.propertyName)
     const { html, text } = generateEmailContent(props)
 
-    const result = await resend.emails.send({
+    const { data, error } = await resend.emails.send({
       from: process.env.RESEND_FROM_EMAIL || 'noreply@coliving-danang.com',
       to: props.tenantEmail,
       subject,
@@ -65,11 +71,15 @@ export async function sendPaymentReminder(
       ],
     })
 
-    console.log(`Payment reminder sent to ${props.tenantEmail}: ${result.id}`)
+    if (error) {
+      throw new Error(error.message || 'Resend send error')
+    }
+
+    console.log(`Payment reminder sent to ${props.tenantEmail}: ${data?.id}`)
     
     return {
       success: true,
-      messageId: result.id,
+      messageId: data?.id,
     }
   } catch (error) {
     console.error('Failed to send payment reminder:', error)

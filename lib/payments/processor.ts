@@ -125,7 +125,7 @@ async function processExternalPayment(payment: any, request: ProcessPaymentReque
     })
 
     // Send confirmation if payment is marked as paid
-    if (status === PaymentStatus.PAID && request.sendConfirmation) {
+    if (status === PaymentStatus.PAID && request.sendConfirmation && updatedPayment) {
       await sendPaymentConfirmation(updatedPayment)
     }
 
@@ -156,7 +156,7 @@ async function processCashPayment(payment: any, request: ProcessPaymentRequest):
     })
 
     // Send confirmation
-    if (request.sendConfirmation) {
+    if (request.sendConfirmation && updatedPayment) {
       await sendPaymentConfirmation(updatedPayment)
     }
 

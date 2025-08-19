@@ -1,5 +1,7 @@
 'use client'
 
+export const dynamic = 'force-dynamic'
+
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
@@ -7,7 +9,9 @@ import { TaskTemplate, TaskCategory, CreateTaskForm } from '@/types'
 import { Plus, Search, Filter, BookOpen, Users, Star } from 'lucide-react'
 
 export default function TaskTemplatesPage() {
-  const { data: session, status } = useSession()
+  const sessionResult = useSession()
+  const session = sessionResult?.data ?? null
+  const status = sessionResult?.status ?? 'loading'
   const router = useRouter()
   
   const [templates, setTemplates] = useState<TaskTemplate[]>([])

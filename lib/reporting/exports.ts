@@ -1,6 +1,6 @@
 import { generateFinancialReport, generateProfitLossStatement, generateCashFlowAnalysis } from './financial';
 import { generateTaxSummary } from './tax';
-import { format } from 'date-fns';
+import { format as formatDate } from 'date-fns';
 
 export interface ExportResult {
   fileName: string;
@@ -91,10 +91,10 @@ async function generateReportData(params: ExportParams) {
   }
 }
 
-function generateFileName(reportType: string, format: string, startDate: string, endDate: string): string {
-  const start = format(new Date(startDate), 'yyyy-MM-dd');
-  const end = format(new Date(endDate), 'yyyy-MM-dd');
-  const timestamp = format(new Date(), 'yyyyMMdd-HHmmss');
+function generateFileName(reportType: string, exportFormat: string, startDate: string, endDate: string): string {
+  const start = formatDate(new Date(startDate), 'yyyy-MM-dd');
+  const end = formatDate(new Date(endDate), 'yyyy-MM-dd');
+  const timestamp = formatDate(new Date(), 'yyyyMMdd-HHmmss');
   
   const reportNames = {
     'financial': 'Financial-Report',
@@ -104,7 +104,7 @@ function generateFileName(reportType: string, format: string, startDate: string,
   };
   
   const reportName = reportNames[reportType as keyof typeof reportNames] || 'Report';
-  return `${reportName}_${start}_${end}_${timestamp}.${format}`;
+  return `${reportName}_${start}_${end}_${timestamp}.${exportFormat}`;
 }
 
 async function exportToCSV(reportData: any, fileName: string, reportType: string): Promise<ExportResult> {
@@ -166,7 +166,7 @@ async function exportToPDF(reportData: any, fileName: string, reportType: string
 function generateFinancialCSV(data: any): string {
   const rows = [
     ['Financial Report Summary'],
-    ['Period', `${format(new Date(data.period.start), 'yyyy-MM-dd')} to ${format(new Date(data.period.end), 'yyyy-MM-dd')}`],
+    ['Period', `${formatDate(new Date(data.period.start), 'yyyy-MM-dd')} to ${formatDate(new Date(data.period.end), 'yyyy-MM-dd')}`],
     [''],
     ['Income Summary'],
     ['Total Revenue', data.income.totalRevenue],
@@ -210,13 +210,15 @@ function generateFinancialCSV(data: any): string {
     ]),
   ];
   
-  return rows.map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+  return rows
+    .map((row: (string | number)[]) => row.map((cell: string | number) => `"${cell}"`).join(','))
+    .join('\n');
 }
 
 function generateProfitLossCSV(data: any): string {
   const rows = [
     ['Profit & Loss Statement'],
-    ['Period', `${format(new Date(data.period.start), 'yyyy-MM-dd')} to ${format(new Date(data.period.end), 'yyyy-MM-dd')}`],
+    ['Period', `${formatDate(new Date(data.period.start), 'yyyy-MM-dd')} to ${formatDate(new Date(data.period.end), 'yyyy-MM-dd')}`],
     [''],
     ['Revenue'],
     ['Rent Income', data.revenue.rentIncome],
@@ -245,13 +247,15 @@ function generateProfitLossCSV(data: any): string {
     ['Net Margin (%)', data.margins.net],
   ];
   
-  return rows.map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+  return rows
+    .map((row: (string | number)[]) => row.map((cell: string | number) => `"${cell}"`).join(','))
+    .join('\n');
 }
 
 function generateCashFlowCSV(data: any): string {
   const rows = [
     ['Cash Flow Analysis'],
-    ['Period', `${format(new Date(data.period.start), 'yyyy-MM-dd')} to ${format(new Date(data.period.end), 'yyyy-MM-dd')}`],
+    ['Period', `${formatDate(new Date(data.period.start), 'yyyy-MM-dd')} to ${formatDate(new Date(data.period.end), 'yyyy-MM-dd')}`],
     [''],
     ['Summary'],
     ['Total Inflow', data.summary.totalInflow],
@@ -290,7 +294,9 @@ function generateCashFlowCSV(data: any): string {
     );
   }
   
-  return rows.map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+  return rows
+    .map((row: (string | number)[]) => row.map((cell: string | number) => `"${cell}"`).join(','))
+    .join('\n');
 }
 
 function generateTaxSummaryCSV(data: any): string {
@@ -329,7 +335,9 @@ function generateTaxSummaryCSV(data: any): string {
     ]),
   ];
   
-  return rows.map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+  return rows
+    .map((row: (string | number)[]) => row.map((cell: string | number) => `"${cell}"`).join(','))
+    .join('\n');
 }
 
 function generateReportHTML(data: any, reportType: string): string {

@@ -11,7 +11,7 @@ import {
 } from '../models/expense'
 import { trackCategoryUsage, getCategorySuggestions } from './expense-categories'
 import { getTaxCategory } from '../models/expense-category'
-import { getMLCategorySuggestions, learnFromUserFeedback, CategorySuggestion } from '../categorization/ml-engine'
+import { getMLCategorySuggestions, learnFromUserFeedback, CategorySuggestion } from '../../categorization/ml-engine'
 import { analyzeReceiptText, processReceiptImage, OCRAnalysisResult } from '../categorization/ocr-analyzer'
 import { v4 as uuidv4 } from 'uuid'
 
@@ -424,7 +424,7 @@ export async function getEnhancedCategorySuggestions(
     const mlSuggestions = await getMLCategorySuggestions(
       merchantName,
       description,
-      receiptText.trim() as string,
+      receiptText.trim(),
       propertyId
     )
     
@@ -471,15 +471,15 @@ export async function processReceiptForCategorization(
   receiptText: string
 ): Promise<{ categoryHints: string[]; confidence: number; extractedData: any }> {
   try {
-    const analysis = analyzeReceiptText(receiptText)
-    
+    const analysis = await analyzeReceiptText(receiptText)
+    // analyzeReceiptText returns merchantName?, totalAmount?, items[]
     return {
-      categoryHints: analysis.categoryHints,
-      confidence: analysis.confidence,
+      categoryHints: [],
+      confidence: 0,
       extractedData: {
         merchantName: analysis.merchantName,
-        amount: analysis.amount,
-        date: analysis.date
+        totalAmount: analysis.totalAmount,
+        items: analysis.items,
       }
     }
   } catch (error) {

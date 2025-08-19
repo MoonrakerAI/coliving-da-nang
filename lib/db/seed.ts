@@ -2,10 +2,9 @@ import {
   createProperty, 
   createTenant, 
   createPayment, 
-  createExpense,
-  clearAllData,
-  checkDatabaseConnection
+  createExpense
 } from './index'
+import { clearAllData, checkDatabaseConnection } from '../db'
 import { 
   CreatePropertyInput,
   CreateTenantInput,
@@ -80,54 +79,51 @@ export const sampleTenants: CreateTenantInput[] = [
     firstName: "John",
     lastName: "Doe",
     phone: "+84 123 456 789",
-    emergencyContact: {
-      name: "Jane Doe",
-      phone: "+1 555 123 4567",
-      relationship: "Sister"
-    },
     propertyId: "", // Will be set during seeding
     roomNumber: "101",
     leaseStart: new Date('2024-01-01'),
     leaseEnd: new Date('2024-12-31'),
     monthlyRentCents: 50000000, // $500 in cents
     depositCents: 100000000, // $1000 in cents
-    status: 'Active'
+    status: 'Active',
+    emergencyContacts: [],
+    documents: [],
+    communicationHistory: [],
+    leaseHistory: []
   },
   {
     email: "sarah.wilson@email.com",
     firstName: "Sarah",
     lastName: "Wilson",
     phone: "+84 987 654 321",
-    emergencyContact: {
-      name: "Mike Wilson",
-      phone: "+1 555 987 6543",
-      relationship: "Brother"
-    },
     propertyId: "", // Will be set during seeding
     roomNumber: "102",
     leaseStart: new Date('2024-02-01'),
     leaseEnd: new Date('2025-01-31'),
     monthlyRentCents: 52000000, // $520 in cents
     depositCents: 104000000, // $1040 in cents
-    status: 'Active'
+    status: 'Active',
+    emergencyContacts: [],
+    documents: [],
+    communicationHistory: [],
+    leaseHistory: []
   },
   {
     email: "mike.chen@email.com",
     firstName: "Mike",
     lastName: "Chen",
     phone: "+84 555 123 456",
-    emergencyContact: {
-      name: "Lisa Chen",
-      phone: "+1 555 456 7890",
-      relationship: "Wife"
-    },
     propertyId: "", // Will be set during seeding
     roomNumber: "201",
     leaseStart: new Date('2024-03-01'),
     leaseEnd: new Date('2024-11-30'),
     monthlyRentCents: 48000000, // $480 in cents
     depositCents: 96000000, // $960 in cents
-    status: 'Active'
+    status: 'Active',
+    emergencyContacts: [],
+    documents: [],
+    communicationHistory: [],
+    leaseHistory: []
   }
 ]
 
@@ -175,10 +171,12 @@ export const sampleExpenses: CreateExpenseInput[] = [
     amountCents: 15000000, // $150 in cents
     currency: "USD",
     category: "Utilities",
+    categorySelection: { categoryId: "Utilities", isAutoSuggested: false },
     description: "Electricity bill for July 2024",
     receiptPhotos: ["https://example.com/receipt1.jpg"],
     needsReimbursement: false,
     isReimbursed: false,
+    isTaxDeductible: false,
     expenseDate: new Date('2024-07-15'),
     createdBy: "owner-001"
   },
@@ -188,10 +186,12 @@ export const sampleExpenses: CreateExpenseInput[] = [
     amountCents: 8500000, // $85 in cents
     currency: "USD",
     category: "Cleaning",
+    categorySelection: { categoryId: "Cleaning", isAutoSuggested: false },
     description: "Professional cleaning service",
     receiptPhotos: ["https://example.com/receipt2.jpg"],
     needsReimbursement: true,
     isReimbursed: false,
+    isTaxDeductible: false,
     expenseDate: new Date('2024-08-01'),
     createdBy: "owner-001",
     location: {
@@ -207,10 +207,12 @@ export const sampleExpenses: CreateExpenseInput[] = [
     amountCents: 12000000, // $120 in cents
     currency: "USD",
     category: "Repairs",
+    categorySelection: { categoryId: "Repairs", isAutoSuggested: false },
     description: "Plumbing repair in room 201",
     receiptPhotos: ["https://example.com/receipt3.jpg", "https://example.com/receipt4.jpg"],
     needsReimbursement: false,
     isReimbursed: false,
+    isTaxDeductible: false,
     expenseDate: new Date('2024-08-05'),
     createdBy: "owner-002"
   }

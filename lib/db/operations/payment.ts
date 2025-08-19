@@ -10,6 +10,7 @@ import {
   PaymentStatusType,
   PaymentMethod
 } from '../models/payment'
+import type { PaymentFilters } from '../models/payment'
 
 // In-memory storage for development (replace with actual database in production)
 const payments: Payment[] = []
@@ -133,14 +134,7 @@ export async function bulkUpdatePaymentStatus(
 }
 
 // Payment filtering and sorting
-export async function getFilteredPayments(filters: {
-  propertyId?: string
-  tenantId?: string
-  status?: PaymentStatusType
-  startDate?: Date
-  endDate?: Date
-  paymentMethod?: keyof typeof PaymentMethod
-}): Promise<Payment[]> {
+export async function getFilteredPayments(filters: PaymentFilters): Promise<Payment[]> {
   let filteredPayments = payments.filter(p => !p.deletedAt)
   
   if (filters.propertyId) {
@@ -155,12 +149,12 @@ export async function getFilteredPayments(filters: {
     filteredPayments = filteredPayments.filter(p => p.status === filters.status)
   }
   
-  if (filters.startDate) {
-    filteredPayments = filteredPayments.filter(p => new Date(p.dueDate) >= filters.startDate!)
+  if (filters.dueDateFrom) {
+    filteredPayments = filteredPayments.filter(p => new Date(p.dueDate) >= filters.dueDateFrom!)
   }
   
-  if (filters.endDate) {
-    filteredPayments = filteredPayments.filter(p => new Date(p.dueDate) <= filters.endDate!)
+  if (filters.dueDateTo) {
+    filteredPayments = filteredPayments.filter(p => new Date(p.dueDate) <= filters.dueDateTo!)
   }
   
   if (filters.paymentMethod) {

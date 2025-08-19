@@ -337,7 +337,7 @@ function calculatePaymentMethodBreakdown(payments: any[], totalRevenue: number):
     return acc;
   }, {} as Record<string, { amount: number; count: number }>);
 
-  return Object.entries(methodTotals).map(([method, data]) => ({
+  return (Object.entries(methodTotals) as Array<[string, { amount: number; count: number }]>).map(([method, data]) => ({
     method,
     amount: data.amount,
     count: data.count,
@@ -358,7 +358,7 @@ function calculateExpenseCategories(expenses: any[]): ExpenseCategoryTotal[] {
     return acc;
   }, {} as Record<string, { amount: number; count: number }>);
 
-  return Object.entries(categoryTotals).map(([category, data]) => ({
+  return (Object.entries(categoryTotals) as Array<[string, { amount: number; count: number }]>).map(([category, data]) => ({
     category,
     amount: data.amount,
     count: data.count,

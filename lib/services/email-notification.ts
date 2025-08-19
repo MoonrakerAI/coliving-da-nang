@@ -232,7 +232,7 @@ export class EmailNotificationService {
       <div class="details">
         <strong>Request Details:</strong><br>
         Amount: <strong>${amount}</strong><br>
-        Reason: ${reimbursement.reason || 'No reason provided'}<br>
+        Reason: ${reimbursement.comments?.[0] ?? 'No reason provided'}<br>
         Requested by: ${reimbursement.requestorId}<br>
         Property: ${reimbursement.propertyId}<br>
         Date: ${reimbursement.createdAt.toLocaleDateString()}
@@ -292,7 +292,7 @@ export class EmailNotificationService {
       <div class="details">
         <strong>Approved Request:</strong><br>
         Amount: <strong>${amount}</strong><br>
-        Reason: ${reimbursement.reason || 'No reason provided'}<br>
+        Reason: ${reimbursement.comments?.[0] ?? 'No reason provided'}<br>
         Request ID: ${reimbursement.id}<br>
         Approved on: ${new Date().toLocaleDateString()}
         ${comment ? `<br>Approval Note: ${comment}` : ''}
@@ -311,16 +311,16 @@ export class EmailNotificationService {
 </body>
 </html>
 `
-  }
+}
 
-  private static generateDeniedEmailHTML(
-    reimbursement: ReimbursementRequest,
-    amount: string,
-    reimbursementUrl: string,
-    comment?: string,
-    recipient?: EmailRecipient
-  ): string {
-    return `
+private static generateDeniedEmailHTML(
+  reimbursement: ReimbursementRequest,
+  amount: string,
+  reimbursementUrl: string,
+  comment?: string,
+  recipient?: EmailRecipient
+): string {
+  return `
 <!DOCTYPE html>
 <html>
 <head>
@@ -351,7 +351,7 @@ export class EmailNotificationService {
       <div class="details">
         <strong>Denied Request:</strong><br>
         Amount: <strong>${amount}</strong><br>
-        Reason: ${reimbursement.reason || 'No reason provided'}<br>
+        Reason: ${reimbursement.deniedReason || comment || reimbursement.comments?.[0] || 'No reason provided'}<br>
         Request ID: ${reimbursement.id}<br>
         Denied on: ${new Date().toLocaleDateString()}
         ${comment ? `<br><strong>Denial Reason:</strong> ${comment}` : ''}
@@ -447,7 +447,7 @@ A new reimbursement request has been submitted and is awaiting your approval:
 
 Request Details:
 - Amount: ${amount}
-- Reason: ${reimbursement.reason || 'No reason provided'}
+- Reason: ${reimbursement.comments?.[0] ?? 'No reason provided'}
 - Requested by: ${reimbursement.requestorId}
 - Property: ${reimbursement.propertyId}
 - Date: ${reimbursement.createdAt.toLocaleDateString()}
@@ -475,7 +475,7 @@ Great news! Your reimbursement request for ${amount} has been approved and will 
 
 Approved Request:
 - Amount: ${amount}
-- Reason: ${reimbursement.reason || 'No reason provided'}
+- Reason: ${reimbursement.comments?.[0] ?? 'No reason provided'}
 - Request ID: ${reimbursement.id}
 - Approved on: ${new Date().toLocaleDateString()}
 ${comment ? `- Approval Note: ${comment}` : ''}
@@ -504,7 +504,7 @@ Unfortunately, your reimbursement request for ${amount} has been denied.
 
 Denied Request:
 - Amount: ${amount}
-- Reason: ${reimbursement.reason || 'No reason provided'}
+- Reason: ${reimbursement.deniedReason || comment || reimbursement.comments?.[0] || 'No reason provided'}
 - Request ID: ${reimbursement.id}
 - Denied on: ${new Date().toLocaleDateString()}
 ${comment ? `- Denial Reason: ${comment}` : ''}

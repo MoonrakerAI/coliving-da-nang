@@ -247,7 +247,10 @@ export async function assessImageQuality(imageBuffer: Buffer): Promise<{
     
     // Check if image is too dark or too bright
     if (stats.channels) {
-      const avgBrightness = stats.channels.reduce((sum, channel) => sum + channel.mean, 0) / stats.channels.length;
+      const avgBrightness = stats.channels.reduce(
+        (sum: number, channel: { mean: number }) => sum + channel.mean,
+        0
+      ) / stats.channels.length;
       
       if (avgBrightness < 50) {
         issues.push('Image too dark');

@@ -1,5 +1,7 @@
 'use client'
 
+export const dynamic = 'force-dynamic'
+
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
@@ -8,7 +10,9 @@ import { TaskForm } from '@/components/tasks/TaskForm'
 import { ArrowLeft } from 'lucide-react'
 
 export default function NewTaskPage() {
-  const { data: session, status } = useSession()
+  const sessionResult = useSession()
+  const session = sessionResult?.data ?? null
+  const status = sessionResult?.status ?? 'loading'
   const router = useRouter()
   
   const [isLoading, setIsLoading] = useState(false)

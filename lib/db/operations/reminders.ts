@@ -324,7 +324,7 @@ export async function cleanupOldReminderLogs(daysToKeep: number = 90): Promise<n
   const cutoffScore = cutoffDate.getTime()
 
   // Get old reminder IDs
-  const oldReminderIds = await kv.zrangebyscore('reminder_logs:by_date', 0, cutoffScore)
+  const oldReminderIds = await kv.zrange('reminder_logs:by_date', 0, cutoffScore, { byScore: true }) as string[]
   
   if (!oldReminderIds.length) return 0
 

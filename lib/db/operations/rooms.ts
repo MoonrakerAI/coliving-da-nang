@@ -80,7 +80,7 @@ export async function createRoom(input: CreateRoomInput): Promise<Room> {
       lastInspection: validatedRoom.lastInspection?.toISOString() || '',
       features: JSON.stringify(validatedRoom.features),
       photos: JSON.stringify(validatedRoom.photos),
-      isAvailable: validatedRoom.isAvailable.toString()
+      isAvailable: (validatedRoom.isAvailable ?? false).toString()
     })
     
     // Add to various indexes
@@ -104,7 +104,7 @@ export async function createRoom(input: CreateRoomInput): Promise<Room> {
 export async function getRoom(id: string): Promise<Room | null> {
   try {
     const roomKey = getRoomKey(id)
-    const data = await db.hgetall(roomKey)
+    const data = await db.hgetall(roomKey) as Record<string, string>
     
     if (!data || Object.keys(data).length === 0) {
       return null
@@ -180,7 +180,7 @@ export async function updateRoom(input: UpdateRoomInput): Promise<Room | null> {
       lastInspection: validatedRoom.lastInspection?.toISOString() || '',
       features: JSON.stringify(validatedRoom.features),
       photos: JSON.stringify(validatedRoom.photos),
-      isAvailable: validatedRoom.isAvailable.toString()
+      isAvailable: (validatedRoom.isAvailable ?? false).toString()
     })
 
     return validatedRoom
@@ -230,7 +230,7 @@ export async function getAvailableRooms(): Promise<Room[]> {
 
     // Filter out null values and ensure they're still available
     return rooms.filter((room): room is Room => 
-      room !== null && room.isAvailable
+      room !== null && !!room.isAvailable
     )
   } catch (error) {
     console.error('Error fetching available rooms:', error)
@@ -299,7 +299,7 @@ export async function getRoomOccupancyHistory(roomId: string): Promise<Occupancy
     const records = await Promise.all(
       recordIds.map(async (id) => {
         const recordKey = getOccupancyRecordKey(id)
-        const data = await db.hgetall(recordKey)
+        const data = await db.hgetall(recordKey) as Record<string, string>
         
         if (!data || Object.keys(data).length === 0 || data.deletedAt) {
           return null
@@ -389,7 +389,7 @@ export async function getPropertyMaintenanceRecords(propertyId: string): Promise
     const records = await Promise.all(
       recordIds.map(async (id) => {
         const recordKey = getMaintenanceRecordKey(id)
-        const data = await db.hgetall(recordKey)
+        const data = await db.hgetall(recordKey) as Record<string, string>
         
         if (!data || Object.keys(data).length === 0 || data.deletedAt) {
           return null

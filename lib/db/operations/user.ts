@@ -18,7 +18,8 @@ import {
   logAuthenticationEvent, 
   logUserManagementEvent, 
   logPasswordEvent,
-  logSecurityEvent
+  logSecurityEvent,
+  createAuditLog
 } from './audit-log'
 import { AuditEventType } from '../models/audit-log'
 
@@ -63,7 +64,7 @@ export async function createUser(
   
   // Create user
   const now = new Date()
-  const user: User = {
+  const rawUser = {
     id: uuidv4(),
     ...validatedData,
     passwordHash,
@@ -71,8 +72,8 @@ export async function createUser(
     updatedAt: now
   }
   
-  // Validate complete user object
-  const validatedUser = UserSchema.parse(user)
+  // Validate complete user object (apply defaults like failedLoginAttempts)
+  const validatedUser = UserSchema.parse(rawUser)
   
   // Store user
   users.push(validatedUser)
@@ -192,14 +193,13 @@ export async function authenticateUser(
       updates.lockedUntil = new Date(Date.now() + lockDuration)
       updates.status = UserStatus.LOCKED
       
-      await logSecurityEvent(
-        AuditEventType.ACCOUNT_LOCKED,
-        user.id,
+      await createAuditLog({
+        eventType: AuditEventType.ACCOUNT_LOCKED,
+        userId: user.id,
         ipAddress,
         userAgent,
-        undefined,
-        { email, failedAttempts }
-      )
+        details: { email, failedAttempts }
+      })
     }
     
     await updateUser(user.id, updates)
@@ -221,7 +221,7 @@ export async function authenticateUser(
     failedLoginAttempts: 0,
     lockedUntil: undefined,
     lastLoginAt: new Date(),
-    status: user.status === UserStatus.LOCKED ? UserStatus.ACTIVE : user.status
+    status: UserStatus.ACTIVE
   })
   
   // Log successful login
@@ -267,14 +267,13 @@ export async function resetPassword(token: string, newPassword: string): Promise
   }
   
   const passwordHash = await hashPassword(newPassword)
-  
+  await setUserPassword(user.id, passwordHash)
   await updateUser(user.id, {
-    passwordHash,
     passwordResetToken: undefined,
     passwordResetExpires: undefined,
     failedLoginAttempts: 0,
     lockedUntil: undefined,
-    status: user.status === UserStatus.LOCKED ? UserStatus.ACTIVE : user.status
+    status: UserStatus.ACTIVE
   })
   
   return true
@@ -296,9 +295,19 @@ export async function changePassword(userId: string, currentPassword: string, ne
   const passwordHash = await hashPassword(newPassword)
   
   // Update password
-  await updateUser(userId, { passwordHash })
+  await setUserPassword(userId, passwordHash)
   
   return true
+}
+
+// Internal helper to update password hash (since UpdateUserSchema omits passwordHash)
+async function setUserPassword(userId: string, passwordHash: string): Promise<User | null> {
+  const idx = users.findIndex(u => u.id === userId)
+  if (idx === -1) return null
+  const updated = { ...users[idx], passwordHash, updatedAt: new Date() }
+  const validated = UserSchema.parse(updated)
+  users[idx] = validated
+  return validated
 }
 
 // User invitation operations
@@ -325,9 +334,8 @@ export async function activateUserInvitation(token: string, password: string): P
   }
   
   const passwordHash = await hashPassword(password)
-  
+  await setUserPassword(user.id, passwordHash)
   const updatedUser = await updateUser(user.id, {
-    passwordHash,
     status: UserStatus.ACTIVE,
     emailVerified: true,
     emailVerificationToken: undefined
