@@ -7,6 +7,13 @@ export default withAuth(
     const token = req.nextauth.token
     const { pathname } = req.nextUrl
 
+    // Ensure API routes return JSON for unauthorized instead of HTML
+    if (pathname.startsWith('/api')) {
+      if (!token) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      }
+    }
+
     // Role-based access control
     if (token) {
       const userRole = token.role as UserRole
@@ -40,6 +47,11 @@ export default withAuth(
       authorized: ({ token, req }) => {
         const { pathname } = req.nextUrl
         
+        // Allow API routes through; we'll enforce inside the middleware above
+        if (pathname.startsWith('/api/')) {
+          return true
+        }
+
         // Public routes that don't require authentication
         const publicRoutes = ['/signin', '/forgot-password', '/reset-password', '/api/auth']
         if (publicRoutes.some(route => pathname.startsWith(route))) {
@@ -66,6 +78,7 @@ export default withAuth(
 export const config = {
   matcher: [
     '/dashboard/:path*',
+    '/admin/:path*',
     '/api/:path*',
     '/payments/:path*',
     '/expenses/:path*',
