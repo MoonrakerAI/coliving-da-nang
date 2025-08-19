@@ -51,17 +51,28 @@ export async function POST(
       urgencyLevel = 'medium'
     }
 
-    // Send reminder email
-    await AgreementNotificationService.sendReminderEmail(
-      agreement,
-      urgencyLevel,
-      `${process.env.NEXT_PUBLIC_APP_URL}/agreements/sign/${agreement.id}`
-    )
+    // Construct reminder data
+    const reminderData = {
+      ...agreement,
+      prospectName: agreement.prospectName || '',
+      prospectEmail: agreement.prospectEmail || '',
+      propertyName: agreement.property?.name || '',
+      propertyAddress: agreement.property?.address || '',
+      agreementUrl: `${process.env.NEXT_PUBLIC_APP_URL}/agreements/sign/${agreement.id}`,
+      reminderNumber: (agreement.reminderCount || 0) + 1,
+      daysUntilExpiration: daysUntilExpiry,
+      ownerName: agreement.property?.owner?.name,
+      ownerEmail: agreement.property?.owner?.email,
+    }
 
-    // Update agreement with last reminder date
+    // Send reminder email
+    await AgreementNotificationService.sendReminderEmail(reminderData)
+
+    // Update agreement with last reminder date and increment count
     await updateAgreement({
       id: agreementId,
-      lastReminderDate: now
+      lastReminderDate: now,
+      reminderCount: (agreement.reminderCount || 0) + 1,
     })
 
     return NextResponse.json({
