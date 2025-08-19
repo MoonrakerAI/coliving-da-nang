@@ -142,7 +142,7 @@ export default function Payments() {
             <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
-          <Button onClick={() => router.push('/payments/record')}>
+          <Button onClick={() => router.push('/admin/payments/record')}>
             <PlusCircle className="h-4 w-4 mr-2" />
             Record Payment
           </Button>
@@ -274,7 +274,7 @@ export default function Payments() {
               <p className="text-muted-foreground">No payments found</p>
               <Button 
                 className="mt-4" 
-                onClick={() => router.push('/payments/record')}
+                onClick={() => router.push('/admin/payments/record')}
               >
                 <PlusCircle className="h-4 w-4 mr-2" />
                 Record First Payment
