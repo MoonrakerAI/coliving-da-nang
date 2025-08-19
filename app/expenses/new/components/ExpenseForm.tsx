@@ -16,12 +16,16 @@ import { LocationPicker } from './LocationPicker'
 import { QuickEntryTemplates } from './QuickEntryTemplates'
 
 // Form schema based on story requirements
+// Note: Avoid referencing global File at module eval time (SSR build lacks File)
+const isFile = (v: unknown): v is File =>
+  typeof window !== 'undefined' && typeof File !== 'undefined' && v instanceof File
+
 const expenseFormSchema = z.object({
   amount: z.number().min(0.01, 'Amount must be greater than 0'),
   currency: z.string().default('VND'),
   category: z.enum(['Utilities', 'Repairs', 'Supplies', 'Cleaning', 'Maintenance', 'Other']),
   description: z.string().min(1, 'Description is required'),
-  receiptPhotos: z.array(z.instanceof(File)).optional(),
+  receiptPhotos: z.array(z.custom<File>(isFile, { message: 'Invalid file' })).optional(),
   location: z.object({
     lat: z.number(),
     lng: z.number(),
