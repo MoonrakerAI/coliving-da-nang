@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth-config';
 import { kv } from '@vercel/kv';
 import { z } from 'zod';
 import { createAuditLog } from '@/lib/admin/audit';
+import { canAccess, isPermifyEnabled } from '@/lib/permify/client';
 
 const createUserSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -16,8 +17,21 @@ export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     
-    if (!session?.user || session.user.role !== 'PROPERTY_OWNER') {
+    if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // If Permify is enabled, enforce admin_access on app:root for this user
+    if (isPermifyEnabled()) {
+      const allowed = await canAccess('app:root', 'admin_access', session.user.id)
+      if (!allowed) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      }
+    } else {
+      // Fallback to role-based guard
+      if (session.user.role !== 'PROPERTY_OWNER') {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      }
     }
 
     const { searchParams } = new URL(request.url);

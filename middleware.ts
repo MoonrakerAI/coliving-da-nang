@@ -1,6 +1,7 @@
 import { withAuth } from 'next-auth/middleware'
 import { NextResponse } from 'next/server'
 import { UserRole } from './lib/auth'
+import { canAccess, isPermifyEnabled } from './lib/permify/client'
 
 export default withAuth(
   function middleware(req) {
@@ -20,8 +21,17 @@ export default withAuth(
       
       // Admin-only routes (Property Owner only)
       if (pathname.startsWith('/admin') || pathname.startsWith('/settings')) {
-        if (userRole !== UserRole.PROPERTY_OWNER) {
-          return NextResponse.redirect(new URL('/dashboard', req.url))
+        // If Permify is enabled, enforce policy; otherwise fallback to role gate
+        if (isPermifyEnabled()) {
+          // Synchronous middleware: we cannot await here. Switch to NextResponse.rewrite to an API check if needed.
+          // For simplicity, keep role fallback in middleware and do fine-grained checks in server actions/API.
+          if (userRole !== UserRole.PROPERTY_OWNER) {
+            return NextResponse.redirect(new URL('/dashboard', req.url))
+          }
+        } else {
+          if (userRole !== UserRole.PROPERTY_OWNER) {
+            return NextResponse.redirect(new URL('/dashboard', req.url))
+          }
         }
       }
       
@@ -34,8 +44,15 @@ export default withAuth(
       
       // API route protection with role checking
       if (pathname.startsWith('/api/admin')) {
-        if (userRole !== UserRole.PROPERTY_OWNER) {
-          return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+        if (isPermifyEnabled()) {
+          // We can't await in middleware; enforce again inside the route using Permify check helper.
+          if (userRole !== UserRole.PROPERTY_OWNER) {
+            return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+          }
+        } else {
+          if (userRole !== UserRole.PROPERTY_OWNER) {
+            return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+          }
         }
       }
     }
